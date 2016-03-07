@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=utf-8 />
+  <title>Park Locator</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <link rel='stylesheet' href='https://api.mapbox.com/mapbox.js/plugins/mapbox-directions.js/v0.4.0/mapbox.directions.css' type='text/css' />
+  <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+  <link rel="stylesheet" href="assets/css/leaflet-control-geocoder.css" />
+  <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700' rel='stylesheet'>
+  <link href='https://api.mapbox.com/mapbox.js/v2.3.0/mapbox.css' rel='stylesheet' />
+  <script src='https://api.mapbox.com/mapbox.js/plugins/mapbox-directions.js/v0.4.0/mapbox.directions.js'></script>
+  <script src='https://api.tiles.mapbox.com/mapbox.js/v2.2.2/mapbox.js'></script>
+  <script src='https://api.mapbox.com/mapbox.js/plugins/turf/v2.0.2/turf.min.js'></script>
+  <script src='https://code.jquery.com/jquery-1.11.0.min.js'></script>
+  <script src='https://api.mapbox.com/mapbox.js/v2.3.0/mapbox.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox.js/v2.2.2/mapbox.css' rel='stylesheet' />
+
+  <style>
+.search-ui {
+  position:absolute;
+  top:10px;
+  right:10px;
+  z-index:1000;
+  }
+  </style>
+  <style>
+  body {
+    color:#404040;
+    font:400 15px/22px 'Source Sans Pro', 'Helvetica Neue', Sans-serif;
+    margin:0;
+    padding:0;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .map {
+    position:absolute;
+    width:100%;
+    top:0;bottom:0;
+  }
+
+  .my-custom-control {
+  background-image: url('Casey_Trees_Logo.png');
+  background-repeat: no-repeat;
+  width:236px; /* you will likely need to specify image width and height here */
+  height:140px;}
+
+
+
+
+  /* Marker tweaks */
+  .leaflet-popup-close-button {
+    display:none;
+  }
+  .leaflet-popup-content {
+    font:400 15px/22px 'Source Sans Pro', 'Helvetica Neue', Sans-serif;
+    padding:0;
+    width:150px;
+  }
+  .leaflet-popup-content-wrapper {
+    padding:0;
+  }
+  .leaflet-popup-content h3 {
+    background:#91c949;
+    color:#fff;
+    margin:0;
+    display:block;
+    padding:10px;
+    border-radius:3px 3px 0 0;
+    font-weight:700;
+    margin-top:-15px;
+  }
+  .leaflet-popup-content div {
+    padding:10px;
+  }
+  .leaflet-container .leaflet-marker-icon { cursor:pointer; }
+  </style>
+</head>
+
+
+<body>
+
+    <div id='listings' class='listings'></div>
+  </div>
+  <div id='map' class='map'> </div>
+
+  <script>
+  L.mapbox.accessToken = 'pk.eyJ1IjoiY2FzZXl0cmVlcyIsImEiOiJvYzEtLUdrIn0.YqMTnfDu7pjBIpcztuXrdQ';
+  var geojson = [
+      {
+        "type": "FeatureCollection",
+        "features": [
+{ "type": "Feature", "properties": { "NAME": "Benning Park", "ADDRESS": "51st and Fitch Sts., SE", "Area_Acres": 8.91 }, "geometry": { "type": "Point", "coordinates": [ -76.92823239711467, 38.879780550146265 ] } },
+{ "type": "Feature", "properties": { "NAME": "Langdon Park", "ADDRESS": "18th St. and Mills Ave., to Hamlin and Franklin Sts., NE", "Area_Acres": 20.00 }, "geometry": { "type": "Point", "coordinates": [ -76.97569128290084, 38.926514487947529 ] } },
+{ "type": "Feature", "properties": { "NAME": "Fort Stanton", "ADDRESS": "north of Erie St., between Pearson Pl. and 16th St., SE", "Area_Acres": 8.52 }, "geometry": { "type": "Point", "coordinates": [ -76.978714211031644, 38.858187109980634 ] } },
+{ "type": "Feature", "properties": { "NAME": "DC Therapeutic", "ADDRESS": "3030 G St., SE", "Area_Acres": 4.70 }, "geometry": { "type": "Point", "coordinates": [ -76.96284361375028, 38.881048575610372 ] } },
+{ "type": "Feature", "properties": { "NAME": "Banneker", "ADDRESS": "Georgia Ave. and Euclid St., NW", "Area_Acres": 13.20 }, "geometry": { "type": "Point", "coordinates": [ -77.023304112568908, 38.922461507451132 ] } },
+{ "type": "Feature", "properties": { "NAME": "Bald Eagle", "ADDRESS": "Nichols and Southern Aves., SW", "Area_Acres": 4.51 }, "geometry": { "type": "Point", "coordinates": [ -77.010174445085184, 38.818245154038514 ] } },
+{ "type": "Feature", "properties": { "NAME": "Brentwood Park", "ADDRESS": "6th St., between New York and Florida Aves., NE", "Area_Acres": 5.0991762813400001 }, "geometry": { "type": "Point", "coordinates": [ -76.995717652530018, 38.908500581167409 ] } },
+{ "type": "Feature", "properties": { "NAME": "Garrison", "ADDRESS": "R St.", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -77.028456085818945, 38.912821280426726 ] } },
+{ "type": "Feature", "properties": { "NAME": "Keene Park", "ADDRESS": "Ft. Totten Park to Barnard Hill, east of Blair Rd. and Gallati", "Area_Acres": 2.22 }, "geometry": { "type": "Point", "coordinates": [ -77.006575030568413, 38.954059051991941 ] } },
+{ "type": "Feature", "properties": { "NAME": "Book Hill Park", "ADDRESS": "Wisconsin Ave. and R St., NW", "Area_Acres": 1.43 }, "geometry": { "type": "Point", "coordinates": [ -77.065972513517863, 38.913175725620498 ] } },
+{ "type": "Feature", "properties": { "NAME": "DPR Headquarters", "ADDRESS": "16th and Lamont Sts., NW", "Area_Acres": 3.35 }, "geometry": { "type": "Point", "coordinates": [ -77.035642282104604, 38.930215741771711 ] } },
+{ "type": "Feature", "properties": { "NAME": "Garfield Park", "ADDRESS": "F St. and Virginia Ave., between 1st and 3rd Sts., SE", "Area_Acres": 6.926384444 }, "geometry": { "type": "Point", "coordinates": [ -77.003744286848203, 38.881532376171521 ] } },
+{ "type": "Feature", "properties": { "NAME": "Georgetown", "ADDRESS": "Volta Pl. and Q St., to 33rd and 34th Sts., NW", "Area_Acres": 2.63 }, "geometry": { "type": "Point", "coordinates": [ -77.067127176014466, 38.910246301158644 ] } },
+{ "type": "Feature", "properties": { "NAME": "Harry Thomas", "ADDRESS": "Lincoln Rd. and 2nd St., to R and T Sts., NE", "Area_Acres": 4.54 }, "geometry": { "type": "Point", "coordinates": [ -77.007206806641619, 38.914444000412161 ] } },
+{ "type": "Feature", "properties": { "NAME": "Edgewood", "ADDRESS": "Douglas St., between Franklin St. and Lincoln Rd., NE", "Area_Acres": 5.68 }, "geometry": { "type": "Point", "coordinates": [ -77.002423696843138, 38.924555386572621 ] } },
+{ "type": "Feature", "properties": { "NAME": "Randall", "ADDRESS": "west of S. Capitol St., between G and K Sts., SW", "Area_Acres": 8.76 }, "geometry": { "type": "Point", "coordinates": [ -77.01026879654799, 38.88051960101452 ] } },
+{ "type": "Feature", "properties": { "NAME": "Kelly Miller Park", "ADDRESS": "49th and 50th Sts., Brooks Pl., NE", "Area_Acres": 10.94 }, "geometry": { "type": "Point", "coordinates": [ -76.931307731633211, 38.894265118622229 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Glenbrook Rd. and Rockwood Pkwy., NW", "Area_Acres": 0.29 }, "geometry": { "type": "Point", "coordinates": [ -77.09961480964499, 38.935313597891323 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "18th St. and Argyle Terr., NW", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -77.041583309706894, 38.944293797965969 ] } },
+{ "type": "Feature", "properties": { "NAME": "Mitchell Park", "ADDRESS": "23rd and S Sts., NW", "Area_Acres": 2.25 }, "geometry": { "type": "Point", "coordinates": [ -77.049816570965532, 38.914477421116402 ] } },
+{ "type": "Feature", "properties": { "NAME": "Marvin Caplan Memorial Park", "ADDRESS": "Alaska Ave., between Holly and 13th Sts., NW", "Area_Acres": 0.28 }, "geometry": { "type": "Point", "coordinates": [ -77.029927723882707, 38.980606249348718 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Military Rd., between Belt Rd. and 42nd St., NW", "Area_Acres": 0.15 }, "geometry": { "type": "Point", "coordinates": [ -77.081810168410811, 38.961232684851687 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Wisconsin Ave., between 42nd and Fessenden Sts., NW", "Area_Acres": 0.27 }, "geometry": { "type": "Point", "coordinates": [ -77.082197035883141, 38.954407460678766 ] } },
+{ "type": "Feature", "properties": { "NAME": "Payne", "ADDRESS": "C St., between 14th and 15th Sts. SE", "Area_Acres": 0.43 }, "geometry": { "type": "Point", "coordinates": [ -76.98464804004476, 38.885048942425591 ] } },
+{ "type": "Feature", "properties": { "NAME": "Fort Greble", "ADDRESS": "South Capitol and 2nd Sts., SE and SW", "Area_Acres": 5.52 }, "geometry": { "type": "Point", "coordinates": [ -77.014473873065285, 38.827316196951578 ] } },
+{ "type": "Feature", "properties": { "NAME": "Congress Heights", "ADDRESS": "7th St., south of Alabama Ave., SE", "Area_Acres": 4.27 }, "geometry": { "type": "Point", "coordinates": [ -76.9966128611686, 38.842392405606937 ] } },
+{ "type": "Feature", "properties": { "NAME": "Douglass", "ADDRESS": "Douglass Rec Ctr. (Ft. Stanton Park to St. Elizabeth Hospital)", "Area_Acres": 5.47 }, "geometry": { "type": "Point", "coordinates": [ -76.978046100439158, 38.852594447075461 ] } },
+{ "type": "Feature", "properties": { "NAME": "Hillcrest", "ADDRESS": "Alabama Ave., west of 32nd St., SE", "Area_Acres": 17.15 }, "geometry": { "type": "Point", "coordinates": [ -76.96315381672585, 38.859284268208192 ] } },
+{ "type": "Feature", "properties": { "NAME": "Barry Farm", "ADDRESS": "Martin Luther King Jr. Blvd., between Howard and Sumner Rds.,", "Area_Acres": 8.3 }, "geometry": { "type": "Point", "coordinates": [ -76.995947281769574, 38.860798557223866 ] } },
+{ "type": "Feature", "properties": { "NAME": "Alger Park", "ADDRESS": "31st and W Sts., to Park and Hillcrest Drs., SE", "Area_Acres": 7.24 }, "geometry": { "type": "Point", "coordinates": [ -76.965166314926833, 38.864410382622538 ] } },
+{ "type": "Feature", "properties": { "NAME": "Pope Branch Park", "ADDRESS": "M St. and Fairlawn Ave., to 39th and Nash Sts., SE", "Area_Acres": 41.68 }, "geometry": { "type": "Point", "coordinates": [ -76.956673445938875, 38.873995392151301 ] } },
+{ "type": "Feature", "properties": { "NAME": "Canal Park", "ADDRESS": "2nd St., between L and M Sts., SE", "Area_Acres": 3.20 }, "geometry": { "type": "Point", "coordinates": [ -77.003220683036602, 38.877967242515346 ] } },
+{ "type": "Feature", "properties": { "NAME": "Lansburgh Park", "ADDRESS": "Delaware Ave., between I and M Sts., SW", "Area_Acres": 4.96 }, "geometry": { "type": "Point", "coordinates": [ -77.012400185567046, 38.878176182511773 ] } },
+{ "type": "Feature", "properties": { "NAME": "Jefferson Field", "ADDRESS": "7th and 9th Sts., to G and H Sts., SW", "Area_Acres": 4.00 }, "geometry": { "type": "Point", "coordinates": [ -77.022920031448436, 38.880709020837521 ] } },
+{ "type": "Feature", "properties": { "NAME": "Amidon Field", "ADDRESS": "4th and G Sts., SW", "Area_Acres": 2.80 }, "geometry": { "type": "Point", "coordinates": [ -77.018180161448868, 38.880717564477813 ] } },
+{ "type": "Feature", "properties": { "NAME": "Fort Davis", "ADDRESS": "41st St., between Ft. Davis St. and Ft. Davis Pl., SE", "Area_Acres": 4.77 }, "geometry": { "type": "Point", "coordinates": [ -76.945155020783346, 38.869446070665234 ] } },
+{ "type": "Feature", "properties": { "NAME": "King-Greenleaf", "ADDRESS": "Canal St., between M and N Sts., SW", "Area_Acres": 7.48 }, "geometry": { "type": "Point", "coordinates": [ -77.013370011298335, 38.874804117621473 ] } },
+{ "type": "Feature", "properties": { "NAME": "Joy Evans", "ADDRESS": "6th St., between L and M Sts., SE", "Area_Acres": 0.94 }, "geometry": { "type": "Point", "coordinates": [ -76.998505400303458, 38.877033350734777 ] } },
+{ "type": "Feature", "properties": { "NAME": "Virginia Avenue", "ADDRESS": "L St., between 9th and 11th Sts., SE", "Area_Acres": 2.63 }, "geometry": { "type": "Point", "coordinates": [ -76.992934511947553, 38.877521270443566 ] } },
+{ "type": "Feature", "properties": { "NAME": "Ridge", "ADDRESS": "Ridge Rd. and Burns St., SE", "Area_Acres": 11.01 }, "geometry": { "type": "Point", "coordinates": [ -76.940817447411646, 38.876801806820062 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Texas Ave. and C St., SE", "Area_Acres": 2.55 }, "geometry": { "type": "Point", "coordinates": [ -76.940955430509973, 38.887194486636112 ] } },
+{ "type": "Feature", "properties": { "NAME": "Kingsman Field", "ADDRESS": "14th St. and Tennessee Ave., NE", "Area_Acres": 1.08}, "geometry": { "type": "Point", "coordinates": [ -76.987365979764419, 38.895253063418089 ] } },
+{ "type": "Feature", "properties": { "NAME": "Lovejoy Park", "ADDRESS": "E St., between 11th and 12th Sts., NE", "Area_Acres": 1.09}, "geometry": { "type": "Point", "coordinates": [ -76.990744536361959, 38.895691207643559 ] } },
+{ "type": "Feature", "properties": { "NAME": "Watts Branch Park", "ADDRESS": "42nd St. and Hunt Pl., to 63rd St. and Southern Ave., NE", "Area_Acres": 61.66 }, "geometry": { "type": "Point", "coordinates": [ -76.92494147702017, 38.895463531664788 ] } },
+{ "type": "Feature", "properties": { "NAME": "Bundy Field", "ADDRESS": "New Jersey Ave., between O and P Sts., NW", "Area_Acres": 2.43 }, "geometry": { "type": "Point", "coordinates": [ -77.017683029145175, 38.90916468675124 ] } },
+{ "type": "Feature", "properties": { "NAME": "W Street Park", "ADDRESS": "48th St., between W and Ashby Sts., NW", "Area_Acres": 2.98 }, "geometry": { "type": "Point", "coordinates": [ -77.093606743414512, 38.919725680562053 ] } },
+{ "type": "Feature", "properties": { "NAME": "K C Lewis", "ADDRESS": "Bryant and W Sts., 4th St., NW", "Area_Acres": 2.12 }, "geometry": { "type": "Point", "coordinates": [ -77.016037527876861, 38.91998738044704 ] } },
+{ "type": "Feature", "properties": { "NAME": "Loomis Park", "ADDRESS": "Bryant and Adams Sts., to Lawrence and 19th Sts., NE", "Area_Acres": 2.47 }, "geometry": { "type": "Point", "coordinates": [ -76.976585507423977, 38.920856075437449 ] } },
+{ "type": "Feature", "properties": { "NAME": "Dakota Park", "ADDRESS": "South Dakota Ave., Adams and 33rd Sts., NE", "Area_Acres": 2.97 }, "geometry": { "type": "Point", "coordinates": [ -76.961750015329073, 38.921780291549638 ] } },
+{ "type": "Feature", "properties": { "NAME": "Watkins", "ADDRESS": "13th St., between D and E Sts., SE", "Area_Acres": 3.17}, "geometry": { "type": "Point", "coordinates": [ -76.988837702202943, 38.883471175492161 ] } },
+{ "type": "Feature", "properties": { "NAME": "Benning Stoddert", "ADDRESS": "100 Stoddert Pl., SE", "Area_Acres": 13.51 }, "geometry": { "type": "Point", "coordinates": [ -76.948157038774241, 38.888529346729889 ] } },
+{ "type": "Feature", "properties": { "NAME": "Sherwood", "ADDRESS": "9th and 10th Sts., to F and G Sts., NE", "Area_Acres": 1.98 }, "geometry": { "type": "Point", "coordinates": [ -76.993204895296657, 38.898319727435116 ] } },
+{ "type": "Feature", "properties": { "NAME": "Joe Cole", "ADDRESS": "Montello Ave. and Morse St., NE", "Area_Acres": 1.74 }, "geometry": { "type": "Point", "coordinates": [ -76.988498442355919, 38.903510005496557 ] } },
+{ "type": "Feature", "properties": { "NAME": "Trinidad", "ADDRESS": "Trinidad Ave., at Childress St., NE", "Area_Acres": 5.34 }, "geometry": { "type": "Point", "coordinates": [ -76.982240469814528, 38.906669574381027 ] } },
+{ "type": "Feature", "properties": { "NAME": "Deanwood", "ADDRESS": "49th and Quarles Sts., NE", "Area_Acres": 5.42 }, "geometry": { "type": "Point", "coordinates": [ -76.932646693949835, 38.907968628104875 ] } },
+{ "type": "Feature", "properties": { "NAME": "Rose Park", "ADDRESS": "Along Rock Creek , between National Zoological Park and Theo Roosevelt Bridge.", "Area_Acres": 1.57 }, "geometry": { "type": "Point", "coordinates": [ -77.055153023073487, 38.908125221668001 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Massachusetts Ave., between Fulton and 35th Sts., NW", "Area_Acres": 0.59 }, "geometry": { "type": "Point", "coordinates": [ -77.068997550862377, 38.925909735533921 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Lincoln Rd., between 4th and Franklin Sts., NE", "Area_Acres": 1.60}, "geometry": { "type": "Point", "coordinates": [ -77.00117137091874, 38.925941476475053 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Massachusetts Ave., between Fulton and 36th Sts., NW", "Area_Acres": 0.38 }, "geometry": { "type": "Point", "coordinates": [ -77.070565640941254, 38.926411026463562 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Park Rd. and 19th St., south of Monroe St., NW", "Area_Acres": 0.13 }, "geometry": { "type": "Point", "coordinates": [ -77.043919973213534, 38.932795125967516 ] } },
+{ "type": "Feature", "properties": { "NAME": "Newark Community Gardens", "ADDRESS": "east of 39th St. and south of Newark St., NW", "Area_Acres": 5.05 }, "geometry": { "type": "Point", "coordinates": [ -77.076178782231793, 38.934935505357522 ] } },
+{ "type": "Feature", "properties": { "NAME": "Spring Valley Park", "ADDRESS": "49th St. and Fordham Rd., south of Quebec St., NW", "Area_Acres": 3.65 }, "geometry": { "type": "Point", "coordinates": [ -77.098169374568585, 38.937429082046606 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Michigan Ave., between Bunker Hill Rd. and 18th St., NE", "Area_Acres": 1.39 }, "geometry": { "type": "Point", "coordinates": [ -76.98086436899014, 38.942243730591358 ] } },
+{ "type": "Feature", "properties": { "NAME": "Stead", "ADDRESS": "15th and 16th Sts., to P & Church Sts., NW", "Area_Acres": 1.61 }, "geometry": { "type": "Point", "coordinates": [ -77.037581613921205, 38.910224351605464 ] } },
+{ "type": "Feature", "properties": { "NAME": "Harrison", "ADDRESS": "U and V Sts., to 13th & 14th Sts., NW", "Area_Acres": 1.37}, "geometry": { "type": "Point", "coordinates": [ -77.030703157266146, 38.917828374312492 ] } },
+{ "type": "Feature", "properties": { "NAME": "Kalorama", "ADDRESS": "Kalorama Rd., between Columbia Rd. and 19th St., NW", "Area_Acres": 3.14 }, "geometry": { "type": "Point", "coordinates": [ -77.044789653222537, 38.920410607610307 ] } },
+{ "type": "Feature", "properties": { "NAME": "Brentwood", "ADDRESS": "15th and Downing Sts., NE", "Area_Acres": 1.29 }, "geometry": { "type": "Point", "coordinates": [ -76.982929813304509, 38.920802150278767 ] } },
+{ "type": "Feature", "properties": { "NAME": "Palisades", "ADDRESS": "Potomac and Arizona Aves., NW", "Area_Acres": 13.79 }, "geometry": { "type": "Point", "coordinates": [ -77.104759898949013, 38.925010637899732 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Massachusetts Ave., between Yuma and 50th Sts., NW", "Area_Acres": 0.68 }, "geometry": { "type": "Point", "coordinates": [ -77.098168910535492, 38.946559288775845 ] } },
+{ "type": "Feature", "properties": { "NAME": "Forest Hills", "ADDRESS": "32nd and Chesapeake Sts., NW", "Area_Acres": 3.13 }, "geometry": { "type": "Point", "coordinates": [ -77.06503750899023, 38.950202402449555 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Davenport and Reno Rd.", "Area_Acres": 0.43 }, "geometry": { "type": "Point", "coordinates": [ -77.071265123865558, 38.952414349826242 ] } },
+{ "type": "Feature", "properties": { "NAME": "Linnean Park", "ADDRESS": "Linnean Ave. and Broad Branch Rd., NW", "Area_Acres": 5.96 }, "geometry": { "type": "Point", "coordinates": [ -77.064647497290849, 38.955589630789163 ] } },
+{ "type": "Feature", "properties": { "NAME": "Shepherd Field", "ADDRESS": "Kalmia and Jonquil Sts., NW", "Area_Acres": 4.50 }, "geometry": { "type": "Point", "coordinates": [ -77.034567192381388, 38.984739535328586 ] } },
+{ "type": "Feature", "properties": { "NAME": "Carolina Park", "ADDRESS": "Manning Place and Macomb Streets, south of Sherier", "Area_Acres": 1.48 }, "geometry": { "type": "Point", "coordinates": [ -77.110404370624039, 38.931116298778903 ] } },
+{ "type": "Feature", "properties": { "NAME": "NJ and O Sts Park", "ADDRESS": "1301 New Jersey Avenue, NW", "Area_Acres": 0.73}, "geometry": { "type": "Point", "coordinates": [ -77.016483170220567, 38.908206735251078 ] } },
+{ "type": "Feature", "properties": { "NAME": "Noyes Park", "ADDRESS": "1000 Franklin Street, NE", "Area_Acres": 1.12}, "geometry": { "type": "Point", "coordinates": [ -76.991679886626414, 38.925826158168832 ] } },
+{ "type": "Feature", "properties": { "NAME": "Unity Park", "ADDRESS": "Columbia Road, Euclid Street and Champlain Street,", "Area_Acres": 0.11 }, "geometry": { "type": "Point", "coordinates": [ -77.041587489640875, 38.923204007947881 ] } },
+{ "type": "Feature", "properties": { "NAME": "Dwight A. Moseley", "ADDRESS": "18th and Perry Sts., NE", "Area_Acres": 8.80 }, "geometry": { "type": "Point", "coordinates": [ -76.977844935296048, 38.935852509190909 ] } },
+{ "type": "Feature", "properties": { "NAME": "Raymond", "ADDRESS": "Spring Rd., between Quincy and 9th Sts., NW", "Area_Acres": 2.55}, "geometry": { "type": "Point", "coordinates": [ -77.026442067436705, 38.936807973706763 ] } },
+{ "type": "Feature", "properties": { "NAME": "Turkey Thicket", "ADDRESS": "Shepherd St. and Michigan Ave., NE", "Area_Acres": 10.77}, "geometry": { "type": "Point", "coordinates": [ -76.992480628983571, 38.937899487629984 ] } },
+{ "type": "Feature", "properties": { "NAME": "Hearst", "ADDRESS": "37th St. and Idaho Ave., NW", "Area_Acres": 6.49}, "geometry": { "type": "Point", "coordinates": [ -77.07171447388167, 38.939444910793512 ] } },
+{ "type": "Feature", "properties": { "NAME": "Petworth", "ADDRESS": "Taylor St., between 8th and 9th Sts., NW", "Area_Acres": 1.13}, "geometry": { "type": "Point", "coordinates": [ -77.024003080545086, 38.941125006635957 ] } },
+{ "type": "Feature", "properties": { "NAME": "Friendship", "ADDRESS": "45th St., Van Ness and Massachusetts Ave., NW", "Area_Acres": 11.10}, "geometry": { "type": "Point", "coordinates": [ -77.088998946814669, 38.94249172241647 ] } },
+{ "type": "Feature", "properties": { "NAME": "Walter Pierce Park", "ADDRESS": "Adams Mill and Ontario Rds., NW", "Area_Acres": 4.11}, "geometry": { "type": "Point", "coordinates": [ -77.0460261209967, 38.924105148643108 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "13th Street and Tennessee Ave., NE", "Area_Acres": 0.26}, "geometry": { "type": "Point", "coordinates": [ -76.988303104071619, 38.892100068719863 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "14th Street and Luzon Ave., NW", "Area_Acres": 0.39}, "geometry": { "type": "Point", "coordinates": [ -77.03369297958605, 38.969242640127696 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "14th Street, Oak and Ogden Streets, NW", "Area_Acres": 0.13}, "geometry": { "type": "Point", "coordinates": [ -77.032934877335251, 38.933979415800508 ] } },
+{ "type": "Feature", "properties": { "NAME": "Rudolph", "ADDRESS": "Ingraham and Hamilton Sts., to 2nd & 3rd Sts., NW", "Area_Acres": 5.38 }, "geometry": { "type": "Point", "coordinates": [ -77.014754326482546, 38.953879151614771 ] } },
+{ "type": "Feature", "properties": { "NAME": "Hamilton", "ADDRESS": "13th and 14th Sts., to Hamilton & Gallatin Sts., NW", "Area_Acres": 1.75}, "geometry": { "type": "Point", "coordinates": [ -77.031137947682879, 38.952619704398991 ] } },
+{ "type": "Feature", "properties": { "NAME": "Riggs LaSalle", "ADDRESS": "Riggs Rd. and Nicholson St., NE", "Area_Acres": 4.80}, "geometry": { "type": "Point", "coordinates": [ -76.998917050696377, 38.959614466875365 ] } },
+{ "type": "Feature", "properties": { "NAME": "Chevy Chase Rec Center", "ADDRESS": "Livingston St., between 41st St. and Western Ave., NW", "Area_Acres": 3.61}, "geometry": { "type": "Point", "coordinates": [ -77.081049259959883, 38.96371762026574 ] } },
+{ "type": "Feature", "properties": { "NAME": "Lamond", "ADDRESS": "Kansas Ave., between Underwood and Tuckerman Sts., NW", "Area_Acres": 2.60}, "geometry": { "type": "Point", "coordinates": [ -77.007745207856459, 38.967781582309797 ] } },
+{ "type": "Feature", "properties": { "NAME": "Takoma Community Center", "ADDRESS": "Van Buren and Sheridan Sts., to 3rd & 5th Sts., NW", "Area_Acres": 16.73}, "geometry": { "type": "Point", "coordinates": [ -77.017618377244858, 38.968579144782566 ] } },
+{ "type": "Feature", "properties": { "NAME": "Takoma Rec", "ADDRESS": "Van Buren St., between 3rd and 4th Sts., NW", "Area_Acres": 4.54 }, "geometry": { "type": "Point", "coordinates": [ -77.017086151929774, 38.970580058137266 ] } },
+{ "type": "Feature", "properties": { "NAME": "Fort Stevens", "ADDRESS": "Luzon Ave., between Van Buren and 13th Sts., NW", "Area_Acres": 8.95}, "geometry": { "type": "Point", "coordinates": [ -77.031160740123212, 38.970651323995575 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "15th Street and North Carolina Avenue, NE", "Area_Acres": 0.25}, "geometry": { "type": "Point", "coordinates": [ -76.983950266725188, 38.892148439947739 ] } },
+{ "type": "Feature", "properties": { "NAME": "Fort Lincoln", "ADDRESS": "Ft. Lincoln Dr. and 31st Pl., NE", "Area_Acres": 17.20}, "geometry": { "type": "Point", "coordinates": [ -76.958226745914601, 38.925459240345077 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "49th and East Capitol Streets", "Area_Acres": 0.50}, "geometry": { "type": "Point", "coordinates": [ -76.931582588234278, 38.890018823874087 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "4th Street and Livingston Terrace, SE", "Area_Acres": 0.13}, "geometry": { "type": "Point", "coordinates": [ -77.00071200636755, 38.827007308984413 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "5th Street and Hobart Place, NW", "Area_Acres": 0.10}, "geometry": { "type": "Point", "coordinates": [ -77.020419494506001, 38.927870456927664 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Arkansas Ave, Farragut Street and Georgia Avenue, NW", "Area_Acres": 0.33079475739699998 }, "geometry": { "type": "Point", "coordinates": [ -77.027594743072655, 38.951022055228066 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Arkansas Avenue and Emerson Street, NW", "Area_Acres": 0.57}, "geometry": { "type": "Point", "coordinates": [ -77.029417307692839, 38.949435056651069 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Bladensburg Road, 28th and Douglas Streets, NE", "Area_Acres": 0.29}, "geometry": { "type": "Point", "coordinates": [ -76.9678372768022, 38.923232781465003 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Bladensburg Road, 30th and Douglas Streets, NE", "Area_Acres": 0.20 }, "geometry": { "type": "Point", "coordinates": [ -76.966746058921174, 38.923608223186882 ] } },
+{ "type": "Feature", "properties": { "NAME": "Parkview", "ADDRESS": "17th St., between Otis and Princeton Pls., NW", "Area_Acres": 1.57}, "geometry": { "type": "Point", "coordinates": [ -77.021750223973186, 38.935164140916797 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Blair Road, 3rd and Whittier Streets, NW", "Area_Acres": 0.12}, "geometry": { "type": "Point", "coordinates": [ -77.015999028635065, 38.971465471303354 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Brooks Street, Blaine Street and Division Avenue, SE", "Area_Acres": 0.24 }, "geometry": { "type": "Point", "coordinates": [ -76.928854162628625, 38.891983684722838 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Central Ave, 51st Street and Ayers Place, SE", "Area_Acres": 0.11 }, "geometry": { "type": "Point", "coordinates": [ -76.927385057787902, 38.888450905416946 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Chevy Chase Parkway and Patterson Street, NW", "Area_Acres": 0.13 }, "geometry": { "type": "Point", "coordinates": [ -77.072725777711781, 38.966924343943624 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Columbia Road, 19th Street and Kalorama Road, NW", "Area_Acres": 0.15 }, "geometry": { "type": "Point", "coordinates": [ -77.044751469271873, 38.919444019876551 ] } },
+{ "type": "Feature", "properties": { "NAME": "Marie Reed", "ADDRESS": "18th St. and Kalorama Rd., NW", "Area_Acres": 1.54 }, "geometry": { "type": "Point", "coordinates": [ -77.041240855994303, 38.918931711058214 ] } },
+{ "type": "Feature", "properties": { "NAME": "Columbia Heights", "ADDRESS": "15th and Girard Sts., NW", "Area_Acres": 1.52}, "geometry": { "type": "Point", "coordinates": [ -77.034625257616042, 38.924874939417258 ] } },
+{ "type": "Feature", "properties": { "NAME": "Kennedy", "ADDRESS": "P St., between 6th and 7th Sts., NW", "Area_Acres": 3.78}, "geometry": { "type": "Point", "coordinates": [ -77.020903214812222, 38.909135335879142 ] } },
+{ "type": "Feature", "properties": { "NAME": "Chevy Chase Community Center", "ADDRESS": "Connecticut Ave. and McKinley St., NW", "Area_Acres": 1.17 }, "geometry": { "type": "Point", "coordinates": [ -77.075079926854272, 38.965291462427835 ] } },
+{ "type": "Feature", "properties": { "NAME": "Macomb", "ADDRESS": "Macomb St., between 34th and 35th Sts., NW", "Area_Acres": 1.31 }, "geometry": { "type": "Point", "coordinates": [ -77.067359328547752, 38.933891078363715 ] } },
+{ "type": "Feature", "properties": { "NAME": "Stoddert", "ADDRESS": "Calvert St., between 39th and 41st Sts., NW", "Area_Acres": 4.04 }, "geometry": { "type": "Point", "coordinates": [ -77.078008171278043, 38.923103117386596 ] } },
+{ "type": "Feature", "properties": { "NAME": "Upshur", "ADDRESS": "14th St. and Arkansas Ave., NW", "Area_Acres": 7.51 }, "geometry": { "type": "Point", "coordinates": [ -77.031791482350727, 38.943198789888491 ] } },
+{ "type": "Feature", "properties": { "NAME": "Emery", "ADDRESS": "Georgia Ave. and Madison St., NW", "Area_Acres": 9.54}, "geometry": { "type": "Point", "coordinates": [ -77.027034822829222, 38.95946230343133 ] } },
+{ "type": "Feature", "properties": { "NAME": "New York Ave Daycare", "ADDRESS": "New York Ave. and 1st St., NW", "Area_Acres": 2.42 }, "geometry": { "type": "Point", "coordinates": [ -77.012901907715829, 38.906770153838664 ] } },
+{ "type": "Feature", "properties": { "NAME": "Arboretum", "ADDRESS": "24th St. and Rand Pl., NE", "Area_Acres": 2.45 }, "geometry": { "type": "Point", "coordinates": [ -76.971124624111013, 38.913994864035374 ] } },
+{ "type": "Feature", "properties": { "NAME": "Guy Mason", "ADDRESS": "Calvert and 36th Sts., NW", "Area_Acres": 4.57}, "geometry": { "type": "Point", "coordinates": [ -77.071544985437782, 38.921856536866407 ] } },
+{ "type": "Feature", "properties": { "NAME": "Rosedale", "ADDRESS": "17th and Gales Sts., NE", "Area_Acres": 5.01}, "geometry": { "type": "Point", "coordinates": [ -76.978992158829641, 38.89727296415159 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "New Hampshire, Sherman Ave and Park Place, NW", "Area_Acres": 0.25}, "geometry": { "type": "Point", "coordinates": [ -77.027075975488629, 38.932403821448005 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "North Carolina Avenue and A Street, NE", "Area_Acres": 0.38}, "geometry": { "type": "Point", "coordinates": [ -76.98661020346502, 38.891088470604871 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Oklahoma Ave, 21st and D Streets, NE", "Area_Acres": 0.22 }, "geometry": { "type": "Point", "coordinates": [ -76.974823683185946, 38.894565116594109 ] } },
+{ "type": "Feature", "properties": { "NAME": "Rumsey Aquatic Center", "ADDRESS": "7th St. and N. Carolina Ave., NE", "Area_Acres": 1.15 }, "geometry": { "type": "Point", "coordinates": [ -76.996976082000728, 38.886534701881004 ] } },
+{ "type": "Feature", "properties": { "NAME": "Francis", "ADDRESS": "25th and N Sts., NW", "Area_Acres": 6.73 }, "geometry": { "type": "Point", "coordinates": [ -77.052092689910495, 38.907562592002073 ] } },
+{ "type": "Feature", "properties": { "NAME": "Hardy", "ADDRESS": "Foxhall Rd. and Q St., NW", "Area_Acres": 4.82 }, "geometry": { "type": "Point", "coordinates": [ -77.084480407560775, 38.909394243659648 ] } },
+{ "type": "Feature", "properties": { "NAME": "Lafayette", "ADDRESS": "Broad Branch Rd., between Quesada and 33rd Sts., NW", "Area_Acres": 9.30}, "geometry": { "type": "Point", "coordinates": [ -77.067650379611933, 38.967603385674039 ] } },
+{ "type": "Feature", "properties": { "NAME": "Shaw", "ADDRESS": "Rhode Island Ave. and 11th St., NW", "Area_Acres": 2.98 }, "geometry": { "type": "Point", "coordinates": [ -77.026387028754186, 38.911586885640169 ] } },
+{ "type": "Feature", "properties": { "NAME": "North Michigan Park", "ADDRESS": "13th and Emerson Sts., NE", "Area_Acres": 4.13}, "geometry": { "type": "Point", "coordinates": [ -76.985958664079376, 38.949597595311928 ] } },
+{ "type": "Feature", "properties": { "NAME": "Evans Park", "ADDRESS": "East Capitol and Blaine Sts., to 55th St. & 57th Pl., SE", "Area_Acres": 4.99 }, "geometry": { "type": "Point", "coordinates": [ -76.921995104258954, 38.890527124174859 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Edgewood Street, 6th and Evart Streets, NE", "Area_Acres": 0.39 }, "geometry": { "type": "Point", "coordinates": [ -76.998112546654482, 38.9243347682918 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "First Street and Florida Avenue, NW", "Area_Acres": 0.80 }, "geometry": { "type": "Point", "coordinates": [ -77.013024423142568, 38.912161705467518 ] } },
+{ "type": "Feature", "properties": { "NAME": "Galen Tait Memorial Park", "ADDRESS": "Western Avenue and Ellicott Street, NW", "Area_Acres": 0.49}, "geometry": { "type": "Point", "coordinates": [ -77.094638821049543, 38.953549771211677 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Georgia Ave, 9th and Upshur Streets, NW", "Area_Acres": 0.38}, "geometry": { "type": "Point", "coordinates": [ -77.025192553236238, 38.941422146824678 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Georgia Ave, Kansas Avenue and Varnum Street, NW", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -77.025502117126607, 38.94276038744372 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Girard Street, 16th Street and Brentwood Road, NE", "Area_Acres": 0.13 }, "geometry": { "type": "Point", "coordinates": [ -76.982432234140575, 38.927080698315059 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Harewood Road and Taylor St.NE", "Area_Acres": 0.14 }, "geometry": { "type": "Point", "coordinates": [ -77.003122304323981, 38.94053456244243 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Illinois Ave and Shepherd Street, NW", "Area_Acres": 0.17}, "geometry": { "type": "Point", "coordinates": [ -77.017180771831377, 38.940120801671888 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Illinois Ave, 9th and Gallatin Streets, NW", "Area_Acres": 0.81}, "geometry": { "type": "Point", "coordinates": [ -77.025301696612573, 38.952324244633893 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Illinois Ave, 9th and Ingraham Streets, NW", "Area_Acres": 0.21 }, "geometry": { "type": "Point", "coordinates": [ -77.025795114232565, 38.953887462618944 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Kansas Ave, 13th and Quincy Streets, NW", "Area_Acres": 0.28 }, "geometry": { "type": "Point", "coordinates": [ -77.029492814753056, 38.937374871507274 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Kansas Ave, 2nd and Longfellow Streets, NW", "Area_Acres": 0.23 }, "geometry": { "type": "Point", "coordinates": [ -77.013831671193643, 38.957871537583749 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Kansas Ave, 3rd and Ingraham Streets, NW", "Area_Acres": 0.29 }, "geometry": { "type": "Point", "coordinates": [ -77.016211223539372, 38.954637198068163 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Kansas Ave, 4th and Gallatin Streets, NW", "Area_Acres": 0.40}, "geometry": { "type": "Point", "coordinates": [ -77.017849475726479, 38.952392170347046 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Kansas Ave, 5th and Farragut Streets, NW", "Area_Acres": 0.13}, "geometry": { "type": "Point", "coordinates": [ -77.019467958276067, 38.950859621960618 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Kentucky and Independence Avenues, SE", "Area_Acres": 0.11}, "geometry": { "type": "Point", "coordinates": [ -76.988559572584137, 38.887831352479154 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Kentucky Ave, 15th and G Streets", "Area_Acres": 0.14 }, "geometry": { "type": "Point", "coordinates": [ -76.983488886280753, 38.881438960190991 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Lincoln Road, 2nd and Channing Streets, NE", "Area_Acres": 0.23}, "geometry": { "type": "Point", "coordinates": [ -77.003643486814781, 38.922675060365137 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Michigan Ave, 12th and Shepherd Streets, NE", "Area_Acres": 0.65 }, "geometry": { "type": "Point", "coordinates": [ -76.989904899486831, 38.939376037325523 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Minnesota Avenue between 16th and T Streets, SE", "Area_Acres": 0.26 }, "geometry": { "type": "Point", "coordinates": [ -76.982501317593631, 38.867420135288114 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Minnesota Ave, 22nd and O Street", "Area_Acres": 0.54 }, "geometry": { "type": "Point", "coordinates": [ -76.975333844266785, 38.870944508736805 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Minnesota Ave, 22nd Street and Naylor Road, SE", "Area_Acres": 0.41}, "geometry": { "type": "Point", "coordinates": [ -76.974685527475415, 38.870959421727285 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Minnesota Ave, 34th and D Streets, SE", "Area_Acres": 0.29}, "geometry": { "type": "Point", "coordinates": [ -76.957324651401933, 38.884172651565393 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Minnesota Ave, 36th Street and Croffut Place, SE", "Area_Acres": 0.30 }, "geometry": { "type": "Point", "coordinates": [ -76.954829270778561, 38.887036628716281 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Minnesota Avenue and Good Hope Road, SE", "Area_Acres": 0.23 }, "geometry": { "type": "Point", "coordinates": [ -76.983884952024852, 38.866710508499281 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Missouri Ave, 200 blk 2nd,  and 5300 blk Kennedy Streets, NW", "Area_Acres": 0.13 }, "geometry": { "type": "Point", "coordinates": [ -77.013938135482434, 38.956496725920125 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Missouri Ave, 3rd and Longfellow Streets, NW", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -77.017112416342087, 38.957547967406917 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Mt. Pleasant, Lamont and 17th Streets, NW", "Area_Acres": 0.33 }, "geometry": { "type": "Point", "coordinates": [ -77.038678598585463, 38.931616196406885 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Naylor Road, 25th Street and Good Hope Road, SE", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -76.969155649466302, 38.86126682692344 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Nebraska and Oregon Avenues, NW", "Area_Acres": 0.11 }, "geometry": { "type": "Point", "coordinates": [ -77.053722591957765, 38.970752721798071 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "New Hampshire Ave, 17th and S Streets, NW", "Area_Acres": 0.40 }, "geometry": { "type": "Point", "coordinates": [ -77.038746783542976, 38.914334400285647 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "New Hampshire Ave, 17th and T Streets, NW", "Area_Acres": 0.19}, "geometry": { "type": "Point", "coordinates": [ -77.038289411247405, 38.915391199963558 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "New Hampshire Ave, 1st and Ingraham Streets, NW", "Area_Acres": 0.61 }, "geometry": { "type": "Point", "coordinates": [ -77.011286046147745, 38.95424685417791 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "New Hampshire Ave, 21st and M Streets, NW", "Area_Acres": 0.22 }, "geometry": { "type": "Point", "coordinates": [ -77.04687500773187, 38.905745210127847 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "New Hampshire Ave, 4th and Buchanan Streets, NW", "Area_Acres": 0.13 }, "geometry": { "type": "Point", "coordinates": [ -77.017169237346636, 38.946234670678116 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "New Hampshire Ave, 7th and Taylor Streets, NW", "Area_Acres": 0.31 }, "geometry": { "type": "Point", "coordinates": [ -77.021351447543836, 38.940682753578081 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "New Hampshire Ave, 8th and Randolph Streets, NW", "Area_Acres": 0.28 }, "geometry": { "type": "Point", "coordinates": [ -77.022969284790292, 38.938493357132046 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "New Hampshire Ave, Longfellow and North Capitol Streets, NW", "Area_Acres": 0.24}, "geometry": { "type": "Point", "coordinates": [ -77.008830260078852, 38.957402224970011 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "New Hampshire Avenue and Decatur Street, NW", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -77.015534836922384, 38.94839857437595 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Plymouth Street and Sudbury Lane, NW", "Area_Acres": 0.29 }, "geometry": { "type": "Point", "coordinates": [ -77.044893330907755, 38.986634120532408 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Potomac Ave, 16th and G Streets, SE", "Area_Acres": 0.21 }, "geometry": { "type": "Point", "coordinates": [ -76.982488218613142, 38.881402485757405 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Potomac Ave, 17th and E Streets, SE", "Area_Acres": 0.56 }, "geometry": { "type": "Point", "coordinates": [ -76.980341480476497, 38.882639666024097 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Potomac Ave. and E Street, SE", "Area_Acres": 0.35 }, "geometry": { "type": "Point", "coordinates": [ -76.978478636655524, 38.882991409168163 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Potomac Ave. and K Street, SE", "Area_Acres": 0.35 }, "geometry": { "type": "Point", "coordinates": [ -76.989412914544985, 38.878552260364053 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Reno Road, 34th and Ordway Streets, NW", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -77.066227767406062, 38.936489614675345 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Reno, 38th and Huntington, NW", "Area_Acres": 0.45 }, "geometry": { "type": "Point", "coordinates": [ -77.074886955615739, 38.957483502414469 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Reno Road, 39th and Jenifer Streets, NW", "Area_Acres": 0.39 }, "geometry": { "type": "Point", "coordinates": [ -77.077457469852916, 38.958853668255188 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Reno Road, Fessenden Street and Chevy Chase Parkway", "Area_Acres": 0.10}, "geometry": { "type": "Point", "coordinates": [ -77.07297597599262, 38.954817277668283 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Rhode Island Ave and U Street, NE", "Area_Acres": 0.10 }, "geometry": { "type": "Point", "coordinates": [ -77.007802729990445, 38.917068848046959 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Rhode Island Ave, 14th Street and Brentwood Road, NE", "Area_Acres": 0.40 }, "geometry": { "type": "Point", "coordinates": [ -76.986048548442042, 38.924651676015891 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Rhode Island Ave, 17th and Girard Streets, NE", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -76.980996616529737, 38.926791677838949 ] } },
+{ "type": "Feature", "properties": { "NAME": "Carter G. Woodson Memorial Park", "ADDRESS": "Rhode Island Ave at 900 blk of Q, 900 blk of R.I., and 1600 blk of 9th", "Area_Acres": 0.27902985338000003 }, "geometry": { "type": "Point", "coordinates": [ -77.024343305932632, 38.911264599670915 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Rhode Island Ave, Douglas and Brentwood Roads, NE", "Area_Acres": 0.62 }, "geometry": { "type": "Point", "coordinates": [ -76.988840939972249, 38.923316775953452 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Rhode Island Avenue and W Street, NE", "Area_Acres": 0.49 }, "geometry": { "type": "Point", "coordinates": [ -77.001018631716491, 38.919346589565677 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Massachusetts Ave, 17th and C Streets, SE", "Area_Acres": 0.62 }, "geometry": { "type": "Point", "coordinates": [ -76.980320877506614, 38.88554995537865 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Massachusetts Ave, 31st and K Streets, SE", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -76.962877165614913, 38.878512712832823 ] } },
+{ "type": "Feature", "properties": { "NAME": "Bishop Lalossu Memorial Park", "ADDRESS": "Massachusetts Ave, 36th and Garfield Streets, NW", "Area_Acres": 0.26}, "geometry": { "type": "Point", "coordinates": [ -77.071111398968227, 38.927324132729431 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Massachusetts Ave, 47th and Upton Streets, NW", "Area_Acres": 0.28}, "geometry": { "type": "Point", "coordinates": [ -77.092364889004457, 38.942405016556172 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Massachusetts Ave, 49th and Yuma Streets, NW", "Area_Acres": 0.1}, "geometry": { "type": "Point", "coordinates": [ -77.096946733289158, 38.946158694944323 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Massachusetts Ave, 8th Street and Constitution Avenue, NE", "Area_Acres": 0.33 }, "geometry": { "type": "Point", "coordinates": [ -76.99472905691799, 38.891850006991248 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Massachusetts Ave, 14th Street and Independence Avenue, SE", "Area_Acres": 0.20}, "geometry": { "type": "Point", "coordinates": [ -76.985643633604752, 38.887741783740701 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Massachusetts Ave, 15th Street and South Carolina Avenue, SE", "Area_Acres": 0.46}, "geometry": { "type": "Point", "coordinates": [ -76.984074834065325, 38.887277292702542 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Massachusetts Avenue and A Street, SE", "Area_Acres": 0.34}, "geometry": { "type": "Point", "coordinates": [ -76.986621498550107, 38.888513823729149 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Riggs Road and Oglethorpe Streets at 6th Street, NE", "Area_Acres": 0.09}, "geometry": { "type": "Point", "coordinates": [ -76.998897242373218, 38.961150180516505 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Rock Creek Church Road and Quincy Street, NW", "Area_Acres": 0.32}, "geometry": { "type": "Point", "coordinates": [ -77.018574460038209, 38.937647720899733 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "South of South Carolina Avenue and C Street, SE", "Area_Acres": 0.42 }, "geometry": { "type": "Point", "coordinates": [ -76.989380320866573, 38.885503170156007 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "North South Carolina Avenue and C Street, SE", "Area_Acres": 0.12 }, "geometry": { "type": "Point", "coordinates": [ -76.98875285981039, 38.885950999222729 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "South Dakota Ave, 19th and Randolph Streets, NE", "Area_Acres": 0.14 }, "geometry": { "type": "Point", "coordinates": [ -76.978493468573745, 38.938149915309268 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "3700 Blk South Dakota Ave, 20th and 1900 Blk Otis Streets, NE", "Area_Acres": 0.28 }, "geometry": { "type": "Point", "coordinates": [ -76.975996930768744, 38.935284063482698 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "South Dakota Ave, 26th and Irving Streets, NE", "Area_Acres": 0.41 }, "geometry": { "type": "Point", "coordinates": [ -76.969887721232993, 38.929387193465821 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "South Dakota Ave, Bladensburg Road and Franklin Street, NE", "Area_Acres": 0.13}, "geometry": { "type": "Point", "coordinates": [ -76.965162353987324, 38.925461695561943 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "South Dakota Ave, Sargeant and Crittenden Streets, NE", "Area_Acres": 0.13 }, "geometry": { "type": "Point", "coordinates": [ -76.989323857274897, 38.94714178681248 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "South Dakota Ave, Sargeant Road and Buchanan Street, NE", "Area_Acres": 0.11}, "geometry": { "type": "Point", "coordinates": [ -76.988761133778524, 38.946409386319168 ] } },
+{ "type": "Feature", "properties": { "NAME": "Anna J. Cooper Circle", "ADDRESS": "T and 3rd Streets, NW", "Area_Acres": 0.17}, "geometry": { "type": "Point", "coordinates": [ -77.01573740249971, 38.91592329070528 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Tennessee Ave, 14th and D Streets, NE", "Area_Acres": 0.23}, "geometry": { "type": "Point", "coordinates": [ -76.985693898836459, 38.894990386610779 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Tennessee Ave, 14th and E Streets, NE", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -76.985333300838079, 38.895933108215146 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Texas Avenue and Benning Road, SE", "Area_Acres": 0.11}, "geometry": { "type": "Point", "coordinates": [ -76.937912691892379, 38.889770777053791 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Western Ave and Pinhurst Circle, NW", "Area_Acres": 0.56}, "geometry": { "type": "Point", "coordinates": [ -77.0661972814531, 38.975764439837185 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Wisconsin Ave, 39th and Veazy Streets, NW", "Area_Acres": 0.13}, "geometry": { "type": "Point", "coordinates": [ -77.077170097425494, 38.943782191724161 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Wisconsin Ave, Ellicot and 42nd Streets, NW", "Area_Acres": 0.11}, "geometry": { "type": "Point", "coordinates": [ -77.081966791325797, 38.953000438208761 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Woodley Road and 29th Street, NW", "Area_Acres": 0.11}, "geometry": { "type": "Point", "coordinates": [ -77.057441165183121, 38.926271381503497 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Mt. Pleasant Street and Park Road, NW", "Area_Acres": 0.17}, "geometry": { "type": "Point", "coordinates": [ -77.039659891010785, 38.932686743091352 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Rhode Island Ave., 1st and U Sts., NW", "Area_Acres": 0.12 }, "geometry": { "type": "Point", "coordinates": [ -77.011852847128978, 38.915638672186844 ] } },
+{ "type": "Feature", "properties": { "NAME": "Twin Oaks Garden", "ADDRESS": "14th and Taylor Sts., NW", "Area_Acres": 0.56 }, "geometry": { "type": "Point", "coordinates": [ -77.032392472138724, 38.940789571363069 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "14th and Girard Sts., NW", "Area_Acres": 0.27 }, "geometry": { "type": "Point", "coordinates": [ -77.031979801025471, 38.925527974453743 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "11th and Monroe Sts., NW", "Area_Acres": 0.27}, "geometry": { "type": "Point", "coordinates": [ -77.028882631882908, 38.932859239103244 ] } },
+{ "type": "Feature", "properties": { "NAME": "Justice Park", "ADDRESS": "14th and Euclid Sts., NW", "Area_Acres": 0.28}, "geometry": { "type": "Point", "coordinates": [ -77.032876140824214, 38.923833720786654 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Rhode Island Ave., 6th and R Sts., NW", "Area_Acres": 0.11}, "geometry": { "type": "Point", "coordinates": [ -77.020205662166106, 38.912725807934962 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "7th and N Sts., NW", "Area_Acres": 0.88}, "geometry": { "type": "Point", "coordinates": [ -77.021268204089694, 38.906762359172241 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "7th St., North Carolina and Independence Aves., SE", "Area_Acres": 0.24}, "geometry": { "type": "Point", "coordinates": [ -76.996506693986888, 38.887444190758949 ] } },
+{ "type": "Feature", "properties": { "NAME": "Randle Highlands", "ADDRESS": "3000 R St., SE", "Area_Acres": 2.43 }, "geometry": { "type": "Point", "coordinates": [ -76.963677454246636, 38.870043451979669 ] } },
+{ "type": "Feature", "properties": { "NAME": "Westminster Playground", "ADDRESS": "907 Westminster St., NW", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -77.024648171051496, 38.915028227120715 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "4th St. and Blair Rd., NW", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -77.017805249349038, 38.97414586470866 ] } },
+{ "type": "Feature", "properties": { "NAME": "Oxon Run Park", "ADDRESS": "Mississippi Ave., between 1st St. and Southern Ave., SE", "Area_Acres": 130.72 }, "geometry": { "type": "Point", "coordinates": [ -76.996603759605051, 38.833627219351989 ] } },
+{ "type": "Feature", "properties": { "NAME": "Kingman and Heritage Islands", "ADDRESS": "Anacostia River (both banks), between Benning Rd. and Railroad Bridge", "Area_Acres": 50.59 }, "geometry": { "type": "Point", "coordinates": [ -76.965170547818161, 38.891927132843996 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "2nd St., Massachusettes Ave and H St.", "Area_Acres": 1.11 }, "geometry": { "type": "Point", "coordinates": [ -77.014187403531295, 38.899842773017639 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "19th and Lamont", "Area_Acres": 0.20 }, "geometry": { "type": "Point", "coordinates": [ -77.044541097089009, 38.931487254060663 ] } },
+{ "type": "Feature", "properties": { "NAME": "North Carolina Ave", "ADDRESS": "North Carolina, 8th St. and Independence Ave, NE", "Area_Acres": 0.20 }, "geometry": { "type": "Point", "coordinates": [ -76.994698077908353, 38.887779669185583 ] } },
+{ "type": "Feature", "properties": { "NAME": "Massachusetts Ave", "ADDRESS": "Massachusetts Ave, 7th St and Constitution Ave., NE", "Area_Acres": 0.31}, "geometry": { "type": "Point", "coordinates": [ -76.996590686147627, 38.892180290704943 ] } },
+{ "type": "Feature", "properties": { "NAME": "14 Street, SE", "ADDRESS": "14th between U and V Sts, SE", "Area_Acres": 0.25}, "geometry": { "type": "Point", "coordinates": [ -76.985501310809212, 38.8654751702922 ] } },
+{ "type": "Feature", "properties": { "NAME": "Capper Recreation Center", "ADDRESS": "East of 5th St between K and L St, SE", "Area_Acres": 3.75 }, "geometry": { "type": "Point", "coordinates": [ -76.998443340337374, 38.877957109547339 ] } },
+{ "type": "Feature", "properties": { "NAME": "Randle Circle", "ADDRESS": "Randle Circle, SE", "Area_Acres": 2.05 }, "geometry": { "type": "Point", "coordinates": [ -76.961462521976244, 38.878085907377979 ] } },
+{ "type": "Feature", "properties": { "NAME": "Parkside Recreation Center", "ADDRESS": "Anacostia Ave. and Hayes St., SE", "Area_Acres": 1.83 }, "geometry": { "type": "Point", "coordinates": [ -76.952675425871121, 38.901051915720444 ] } },
+{ "type": "Feature", "properties": { "NAME": "Arkansas Ave", "ADDRESS": "Webster St., 14th St., Arkansas Ave., NW", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -77.032494536036083, 38.94380826814136 ] } },
+{ "type": "Feature", "properties": { "NAME": "Takoma School Recreation Center", "ADDRESS": "West of Piney Branch Rd. between Danlia St. and Highland Ave., NW", "Area_Acres": 5.8279711129900003 }, "geometry": { "type": "Point", "coordinates": [ -77.022695460528695, 38.975261084460818 ] } },
+{ "type": "Feature", "properties": { "NAME": "Central Avenue", "ADDRESS": "Carlton Ave. and Central Ave., NW", "Area_Acres": 2.48 }, "geometry": { "type": "Point", "coordinates": [ -76.966148487124372, 38.929322859481914 ] } },
+{ "type": "Feature", "properties": { "NAME": "Potomac Avenue", "ADDRESS": "Between I St. and Potomac Ave. west of 13th St., SE", "Area_Acres": 0.35 }, "geometry": { "type": "Point", "coordinates": [ -76.988970098785288, 38.879110682220848 ] } },
+{ "type": "Feature", "properties": { "NAME": "F St. between 7th and 9th St., NW", "ADDRESS": "F St. between 7th and 9th St., NW", "Area_Acres": 1.34}, "geometry": { "type": "Point", "coordinates": [ -77.022935486821183, 38.897261208941828 ] } },
+{ "type": "Feature", "properties": { "NAME": "Old 8th between E St and F St., NW", "ADDRESS": "8th St. between E St. and F St., NW", "Area_Acres": 0.62}, "geometry": { "type": "Point", "coordinates": [ -77.022948905290107, 38.896656454454273 ] } },
+{ "type": "Feature", "properties": { "NAME": "G St. between 9th and 10th St., NW", "ADDRESS": "G St. between 9th and 10 St., NW", "Area_Acres": 1.16}, "geometry": { "type": "Point", "coordinates": [ -77.025012833427894, 38.898307036694227 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -77.028265839482401, 38.91154389444997 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -77.044723376752785, 38.911329848556726 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -77.048467017713619, 38.911245917622011 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.09 }, "geometry": { "type": "Point", "coordinates": [ -77.010435018032013, 38.911234593731436 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.12 }, "geometry": { "type": "Point", "coordinates": [ -77.009298102264566, 38.911082306457999 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.40 }, "geometry": { "type": "Point", "coordinates": [ -77.050161354969916, 38.910727437401086 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.15 }, "geometry": { "type": "Point", "coordinates": [ -77.04688356821805, 38.910994634316999 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.54 }, "geometry": { "type": "Point", "coordinates": [ -77.048985623930648, 38.910029188510194 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.52 }, "geometry": { "type": "Point", "coordinates": [ -77.089741864542617, 38.909907307090634 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -77.01627879602654, 38.910117220489958 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.47 }, "geometry": { "type": "Point", "coordinates": [ -77.04343796815472, 38.909647509930885 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.47 }, "geometry": { "type": "Point", "coordinates": [ -77.029628568086082, 38.909648909726627 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.37 }, "geometry": { "type": "Point", "coordinates": [ -77.028409789102781, 38.909815287247561 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.27 }, "geometry": { "type": "Point", "coordinates": [ -77.04459836605227, 38.909821067165154 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.28 }, "geometry": { "type": "Point", "coordinates": [ -77.007157920329149, 38.909787703953945 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 123.94 }, "geometry": { "type": "Point", "coordinates": [ -76.966268860803652, 38.903835333444135 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.30}, "geometry": { "type": "Point", "coordinates": [ -77.029931707325247, 38.908779230337494 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.27}, "geometry": { "type": "Point", "coordinates": [ -77.006524166992492, 38.908431594275278 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.54}, "geometry": { "type": "Point", "coordinates": [ -77.030980239313038, 38.908014209679671 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 22.79}, "geometry": { "type": "Point", "coordinates": [ -76.947452330367867, 38.90520517362355 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.43 }, "geometry": { "type": "Point", "coordinates": [ -77.037410184900921, 38.907235789029563 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.45}, "geometry": { "type": "Point", "coordinates": [ -77.035620523057005, 38.907241143833467 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.09}, "geometry": { "type": "Point", "coordinates": [ -77.008459041906022, 38.907361223309096 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.40}, "geometry": { "type": "Point", "coordinates": [ -77.036517289270492, 38.907241870327127 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.83}, "geometry": { "type": "Point", "coordinates": [ -76.96147761014771, 38.906385207926718 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 51.88}, "geometry": { "type": "Point", "coordinates": [ -76.962343725360597, 38.901621997667732 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.32}, "geometry": { "type": "Point", "coordinates": [ -77.031666818985869, 38.906569695629138 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 6.72}, "geometry": { "type": "Point", "coordinates": [ -77.075759839494509, 38.905869732429757 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17}, "geometry": { "type": "Point", "coordinates": [ -77.041497726563264, 38.905892000100515 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.11 }, "geometry": { "type": "Point", "coordinates": [ -77.01510840574106, 38.905836275079984 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.65}, "geometry": { "type": "Point", "coordinates": [ -77.012607409846439, 38.905844197335938 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.45}, "geometry": { "type": "Point", "coordinates": [ -77.06029146075376, 38.905694803714781 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.37}, "geometry": { "type": "Point", "coordinates": [ -77.033223058901442, 38.905801673601331 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.43}, "geometry": { "type": "Point", "coordinates": [ -77.03194727833052, 38.905647448794959 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.099}, "geometry": { "type": "Point", "coordinates": [ -76.997587275329735, 38.905740728726279 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.35}, "geometry": { "type": "Point", "coordinates": [ -76.962844446334358, 38.905104849625829 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.13}, "geometry": { "type": "Point", "coordinates": [ -77.015041106810301, 38.905497608952679 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.29}, "geometry": { "type": "Point", "coordinates": [ -77.030759096843568, 38.905490159902961 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.88}, "geometry": { "type": "Point", "coordinates": [ -76.971277321797857, 38.905375533279908 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.47}, "geometry": { "type": "Point", "coordinates": [ -77.022292613345343, 38.893722650947097 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.15 }, "geometry": { "type": "Point", "coordinates": [ -77.022937188805955, 38.893800422347766 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.45}, "geometry": { "type": "Point", "coordinates": [ -77.05439097769208, 38.893218092261222 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.56}, "geometry": { "type": "Point", "coordinates": [ -77.044146780435682, 38.893486244523302 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.52}, "geometry": { "type": "Point", "coordinates": [ -77.02356044045014, 38.89340462031052 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.05}, "geometry": { "type": "Point", "coordinates": [ -77.042262144082599, 38.893217707414536 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 5.84}, "geometry": { "type": "Point", "coordinates": [ -76.945260053922325, 38.891549077595521 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.77 }, "geometry": { "type": "Point", "coordinates": [ -77.042723842703694, 38.892619889504928 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.59}, "geometry": { "type": "Point", "coordinates": [ -77.052858081721951, 38.892888483262055 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.35 }, "geometry": { "type": "Point", "coordinates": [ -76.976936993344566, 38.893027846596858 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.48 }, "geometry": { "type": "Point", "coordinates": [ -76.975562170764803, 38.893003485750121 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.30 }, "geometry": { "type": "Point", "coordinates": [ -77.051689506125413, 38.892421151740486 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -77.053559132462709, 38.892720507809152 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.57 }, "geometry": { "type": "Point", "coordinates": [ -77.019524167606804, 38.887258412284396 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.14 }, "geometry": { "type": "Point", "coordinates": [ -77.002324294759859, 38.887179670474829 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.43 }, "geometry": { "type": "Point", "coordinates": [ -77.001299559709196, 38.886754915211903 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.63 }, "geometry": { "type": "Point", "coordinates": [ -76.999394404747633, 38.886383478935798 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 16.95 }, "geometry": { "type": "Point", "coordinates": [ -76.944835237147188, 38.883558227139133 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.28 }, "geometry": { "type": "Point", "coordinates": [ -77.000003612963781, 38.886235741398018 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.44 }, "geometry": { "type": "Point", "coordinates": [ -76.998739229417467, 38.886093328782316 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.38 }, "geometry": { "type": "Point", "coordinates": [ -77.023022730936077, 38.886122731717279 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.43 }, "geometry": { "type": "Point", "coordinates": [ -77.000286347027327, 38.88596923548257 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.22}, "geometry": { "type": "Point", "coordinates": [ -76.99901982598098, 38.885826836160554 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.64 }, "geometry": { "type": "Point", "coordinates": [ -76.999644498466168, 38.885681717797155 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.70 }, "geometry": { "type": "Point", "coordinates": [ -76.997326695514289, 38.885144251900172 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.13 }, "geometry": { "type": "Point", "coordinates": [ -77.020191952425989, 38.884986308124461 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.64}, "geometry": { "type": "Point", "coordinates": [ -76.943965541325994, 38.88465933796779 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.20}, "geometry": { "type": "Point", "coordinates": [ -77.002767967832369, 38.884662571017245 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.26}, "geometry": { "type": "Point", "coordinates": [ -76.945419838726721, 38.884571814218106 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.31}, "geometry": { "type": "Point", "coordinates": [ -76.995603375807292, 38.884438890649172 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.58}, "geometry": { "type": "Point", "coordinates": [ -76.943870757201054, 38.883614662917701 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.30}, "geometry": { "type": "Point", "coordinates": [ -76.994327866998319, 38.883927295575887 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.11}, "geometry": { "type": "Point", "coordinates": [ -76.994722003744258, 38.883836288032462 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.26}, "geometry": { "type": "Point", "coordinates": [ -76.993232277302027, 38.88347281061953 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 370.25}, "geometry": { "type": "Point", "coordinates": [ -76.949647267586769, 38.877451041016442 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.28}, "geometry": { "type": "Point", "coordinates": [ -76.992127813477268, 38.883019727817924 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.86 }, "geometry": { "type": "Point", "coordinates": [ -76.999488688603236, 38.882965197478086 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.11 }, "geometry": { "type": "Point", "coordinates": [ -76.99234447846797, 38.882847439298594 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.34}, "geometry": { "type": "Point", "coordinates": [ -76.990858345782797, 38.882505066325706 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.26}, "geometry": { "type": "Point", "coordinates": [ -76.990550257658853, 38.88267366196515 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 27.36}, "geometry": { "type": "Point", "coordinates": [ -77.036720589240247, 38.88071387898318 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 11.69}, "geometry": { "type": "Point", "coordinates": [ -76.961032778140208, 38.881612157530057 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.18}, "geometry": { "type": "Point", "coordinates": [ -77.034257005883859, 38.880257497598606 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.57}, "geometry": { "type": "Point", "coordinates": [ -76.989283708437256, 38.881863209977006 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 329.52 }, "geometry": { "type": "Point", "coordinates": [ -77.027557010335741, 38.871144384089838 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 6.20}, "geometry": { "type": "Point", "coordinates": [ -77.025515802518541, 38.881563143653615 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 16.79}, "geometry": { "type": "Point", "coordinates": [ -77.101966027431715, 38.921697973650708 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 12.17 }, "geometry": { "type": "Point", "coordinates": [ -77.038324760703304, 38.990195118385479 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 21.12}, "geometry": { "type": "Point", "coordinates": [ -77.058057781927587, 38.977986009435341 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.04}, "geometry": { "type": "Point", "coordinates": [ -77.026690596548349, 38.970721407301696 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.56}, "geometry": { "type": "Point", "coordinates": [ -77.07696542089387, 38.967517377604629 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.22}, "geometry": { "type": "Point", "coordinates": [ -77.029214062100294, 38.964372262550832 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.10}, "geometry": { "type": "Point", "coordinates": [ -77.030436852606059, 38.963564295686616 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.23}, "geometry": { "type": "Point", "coordinates": [ -77.028769556110362, 38.963572180452864 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.04 }, "geometry": { "type": "Point", "coordinates": [ -77.026851101704239, 38.963598632558892 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.04}, "geometry": { "type": "Point", "coordinates": [ -77.025209213445891, 38.963174984062036 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.71 }, "geometry": { "type": "Point", "coordinates": [ -77.034878212847687, 38.962764838643672 ] } },
+{ "type": "Feature", "properties": { "NAME": "Francis G. Newlands Park", "ADDRESS": "No Name", "Area_Acres": 9.16 }, "geometry": { "type": "Point", "coordinates": [ -77.058561635326441, 38.961982097710504 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.06 }, "geometry": { "type": "Point", "coordinates": [ -77.035723659412895, 38.96271144625301 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.68 }, "geometry": { "type": "Point", "coordinates": [ -77.031381390419369, 38.962277857333774 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.96}, "geometry": { "type": "Point", "coordinates": [ -77.023972383361695, 38.961898538733664 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.84}, "geometry": { "type": "Point", "coordinates": [ -77.034188036673058, 38.961921450760052 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.49}, "geometry": { "type": "Point", "coordinates": [ -77.03289488983053, 38.961749492429618 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.95}, "geometry": { "type": "Point", "coordinates": [ -77.023953719725711, 38.960749391085486 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 20.45}, "geometry": { "type": "Point", "coordinates": [ -77.014317099828403, 38.960110170619323 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.09}, "geometry": { "type": "Point", "coordinates": [ -77.010850390719952, 38.960823227209346 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 4.21}, "geometry": { "type": "Point", "coordinates": [ -77.008171087581843, 38.960666061906863 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.11}, "geometry": { "type": "Point", "coordinates": [ -77.006871759904712, 38.960270108927105 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.32}, "geometry": { "type": "Point", "coordinates": [ -77.0063204625297, 38.959874416798314 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.26}, "geometry": { "type": "Point", "coordinates": [ -77.024565584563874, 38.960004078153013 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.51}, "geometry": { "type": "Point", "coordinates": [ -77.023300639233838, 38.959694501437163 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.37}, "geometry": { "type": "Point", "coordinates": [ -77.023813773306969, 38.959380447609433 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.85}, "geometry": { "type": "Point", "coordinates": [ -77.021800504443831, 38.95916575070482 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.94 }, "geometry": { "type": "Point", "coordinates": [ -77.005389198955584, 38.958938340495791 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.43 }, "geometry": { "type": "Point", "coordinates": [ -77.02078518900656, 38.958946188056778 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 5.50 }, "geometry": { "type": "Point", "coordinates": [ -77.067968893307224, 38.957424970228828 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 6.03}, "geometry": { "type": "Point", "coordinates": [ -77.058354533098608, 38.957747067121218 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.68 }, "geometry": { "type": "Point", "coordinates": [ -77.064438336019649, 38.958485492332848 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.25}, "geometry": { "type": "Point", "coordinates": [ -77.005393578894726, 38.958214727920584 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -77.020191572606507, 38.958574935055196 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.52 }, "geometry": { "type": "Point", "coordinates": [ -77.0166481981706, 38.958543509575591 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.62}, "geometry": { "type": "Point", "coordinates": [ -77.01901413501767, 38.958475939455703 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.54}, "geometry": { "type": "Point", "coordinates": [ -77.017563181820563, 38.958545116583942 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.35}, "geometry": { "type": "Point", "coordinates": [ -77.066702553670424, 38.957605735007263 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.46 }, "geometry": { "type": "Point", "coordinates": [ -77.063526113138792, 38.957800068452698 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.18}, "geometry": { "type": "Point", "coordinates": [ -77.059710179683677, 38.957787224039102 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.17}, "geometry": { "type": "Point", "coordinates": [ -77.004608911304103, 38.957161872765823 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.05 }, "geometry": { "type": "Point", "coordinates": [ -77.005138897465969, 38.95712760605943 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.14 }, "geometry": { "type": "Point", "coordinates": [ -77.063641484310736, 38.95703445087355 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.35 }, "geometry": { "type": "Point", "coordinates": [ -77.004885670557073, 38.956174067259937 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 5.49 }, "geometry": { "type": "Point", "coordinates": [ -77.091488236748518, 38.955385868887319 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.36 }, "geometry": { "type": "Point", "coordinates": [ -77.068918673966792, 38.955094207468214 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 11.12}, "geometry": { "type": "Point", "coordinates": [ -77.077833037783037, 38.953534958361352 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 6.83}, "geometry": { "type": "Point", "coordinates": [ -77.07363230719956, 38.953937954035851 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.61 }, "geometry": { "type": "Point", "coordinates": [ -77.068999380051878, 38.954323389977048 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.68 }, "geometry": { "type": "Point", "coordinates": [ -77.072185723981519, 38.954410951047301 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.72}, "geometry": { "type": "Point", "coordinates": [ -77.069384953306198, 38.953586393257908 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.15 }, "geometry": { "type": "Point", "coordinates": [ -77.069943769471323, 38.953480133397591 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 15.77}, "geometry": { "type": "Point", "coordinates": [ -76.992278398229629, 38.952864275211525 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.49 }, "geometry": { "type": "Point", "coordinates": [ -77.072461902037645, 38.952423378555189 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 4.90 }, "geometry": { "type": "Point", "coordinates": [ -77.075377369925903, 38.952060156879405 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 10.11}, "geometry": { "type": "Point", "coordinates": [ -76.999512455577047, 38.951926617735715 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 43.68 }, "geometry": { "type": "Point", "coordinates": [ -77.00493127772242, 38.949006957656849 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 4.64}, "geometry": { "type": "Point", "coordinates": [ -77.075581379600976, 38.951292286552764 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.50 }, "geometry": { "type": "Point", "coordinates": [ -77.078228438025093, 38.950450174071023 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.83}, "geometry": { "type": "Point", "coordinates": [ -77.078321829591147, 38.948993032554846 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.32}, "geometry": { "type": "Point", "coordinates": [ -77.100208833567748, 38.949000817299755 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.71}, "geometry": { "type": "Point", "coordinates": [ -77.100887486053267, 38.948857971583138 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.48}, "geometry": { "type": "Point", "coordinates": [ -77.021610937468338, 38.948169984456975 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.29}, "geometry": { "type": "Point", "coordinates": [ -77.022134766814133, 38.948161424578039 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -77.078368505419888, 38.947583382452315 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.27 }, "geometry": { "type": "Point", "coordinates": [ -77.078697563346097, 38.947561080370726 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.27}, "geometry": { "type": "Point", "coordinates": [ -77.02188287951607, 38.947326132516615 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 22.91 }, "geometry": { "type": "Point", "coordinates": [ -77.059660458028091, 38.946024499769123 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.43}, "geometry": { "type": "Point", "coordinates": [ -77.078183842177907, 38.947235647156091 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.47}, "geometry": { "type": "Point", "coordinates": [ -77.078771498181169, 38.946946078546816 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.62 }, "geometry": { "type": "Point", "coordinates": [ -76.978280524885719, 38.946624514222627 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.51}, "geometry": { "type": "Point", "coordinates": [ -77.022149618872902, 38.946482570606385 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.32}, "geometry": { "type": "Point", "coordinates": [ -77.021613638150555, 38.946488185370733 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16}, "geometry": { "type": "Point", "coordinates": [ -77.07858698592851, 38.946392647855042 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16}, "geometry": { "type": "Point", "coordinates": [ -77.07893471589847, 38.946136828629328 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.72}, "geometry": { "type": "Point", "coordinates": [ -76.9758622521597, 38.944681957777767 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.13 }, "geometry": { "type": "Point", "coordinates": [ -77.080668705785598, 38.943562143964684 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.28 }, "geometry": { "type": "Point", "coordinates": [ -77.01947791443736, 38.943956141100287 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.46}, "geometry": { "type": "Point", "coordinates": [ -77.019272395283707, 38.943118202573203 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.29 }, "geometry": { "type": "Point", "coordinates": [ -77.081823282531801, 38.942951203208956 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 16.83 }, "geometry": { "type": "Point", "coordinates": [ -77.078637079933529, 38.937064266083965 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 5.98}, "geometry": { "type": "Point", "coordinates": [ -76.972942030803068, 38.941638861711056 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.25 }, "geometry": { "type": "Point", "coordinates": [ -77.01898434361506, 38.942288555589975 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 22.45 }, "geometry": { "type": "Point", "coordinates": [ -77.079893488721268, 38.937873940982399 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 25.0 }, "geometry": { "type": "Point", "coordinates": [ -76.970401702889646, 38.939303097937611 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.38 }, "geometry": { "type": "Point", "coordinates": [ -77.053403423534633, 38.940857522034889 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 9.9 }, "geometry": { "type": "Point", "coordinates": [ -77.035245808734203, 38.939005856383297 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 44.13 }, "geometry": { "type": "Point", "coordinates": [ -77.059524471611823, 38.938929544576958 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.38 }, "geometry": { "type": "Point", "coordinates": [ -77.085090294225623, 38.939169490470796 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.13 }, "geometry": { "type": "Point", "coordinates": [ -77.086173677587027, 38.938048396915434 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.51 }, "geometry": { "type": "Point", "coordinates": [ -77.085897946548613, 38.937915436935008 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.12 }, "geometry": { "type": "Point", "coordinates": [ -77.085614359595823, 38.93777925602366 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.38 }, "geometry": { "type": "Point", "coordinates": [ -76.966570254691106, 38.937276741611846 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.12 }, "geometry": { "type": "Point", "coordinates": [ -76.966215398318397, 38.937010514898915 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 18.77 }, "geometry": { "type": "Point", "coordinates": [ -77.117194871563186, 38.934699772309763 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.26}, "geometry": { "type": "Point", "coordinates": [ -76.965667334830869, 38.936340412477691 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.65 }, "geometry": { "type": "Point", "coordinates": [ -76.964894479064867, 38.935949356400663 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 7.64 }, "geometry": { "type": "Point", "coordinates": [ -76.987606579007476, 38.935429807234478 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.44}, "geometry": { "type": "Point", "coordinates": [ -76.964187231960352, 38.935410352054085 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.51 }, "geometry": { "type": "Point", "coordinates": [ -76.963314635302893, 38.934789117300411 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 32.12 }, "geometry": { "type": "Point", "coordinates": [ -77.114742913641678, 38.931834808063911 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 10.23 }, "geometry": { "type": "Point", "coordinates": [ -77.081002503653636, 38.932694747953818 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.22 }, "geometry": { "type": "Point", "coordinates": [ -76.962530509857686, 38.934255307999244 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.62 }, "geometry": { "type": "Point", "coordinates": [ -76.962008128827136, 38.933538450942521 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.84 }, "geometry": { "type": "Point", "coordinates": [ -76.960689053606686, 38.932529853916705 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 5.65 }, "geometry": { "type": "Point", "coordinates": [ -77.079927690264029, 38.931736395242005 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 55.29 }, "geometry": { "type": "Point", "coordinates": [ -77.095134535180605, 38.926954584406225 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 16.98 }, "geometry": { "type": "Point", "coordinates": [ -77.046042987598341, 38.929866864684158 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 5.17 }, "geometry": { "type": "Point", "coordinates": [ -77.059111591253497, 38.930524304800684 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.23 }, "geometry": { "type": "Point", "coordinates": [ -77.036227878404119, 38.931312564047317 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.92}, "geometry": { "type": "Point", "coordinates": [ -76.958423191963504, 38.930883848992195 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.03 }, "geometry": { "type": "Point", "coordinates": [ -77.09576897860029, 38.930136270197508 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 9.05 }, "geometry": { "type": "Point", "coordinates": [ -77.109717303630717, 38.927895867265384 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.56 }, "geometry": { "type": "Point", "coordinates": [ -76.957384738474985, 38.93002896018298 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.27 }, "geometry": { "type": "Point", "coordinates": [ -77.036683939321108, 38.930248283860813 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 226.28}, "geometry": { "type": "Point", "coordinates": [ -77.100683265465534, 38.917718101119029 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 8.72 }, "geometry": { "type": "Point", "coordinates": [ -77.081277723258694, 38.928347644611669 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 5.19 }, "geometry": { "type": "Point", "coordinates": [ -77.082019839920477, 38.929040287660598 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.46 }, "geometry": { "type": "Point", "coordinates": [ -77.061280516261959, 38.929958826715357 ] } },
+{ "type": "Feature", "properties": { "NAME": "Bryce Park", "ADDRESS": "No Name", "Area_Acres": 1.29 }, "geometry": { "type": "Point", "coordinates": [ -77.07263840816411, 38.927861959435859 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.91 }, "geometry": { "type": "Point", "coordinates": [ -77.043131138449766, 38.927440524878115 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.32 }, "geometry": { "type": "Point", "coordinates": [ -77.03668176719188, 38.927556637891044 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 61.23 }, "geometry": { "type": "Point", "coordinates": [ -77.084677042093247, 38.922751215358993 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.56 }, "geometry": { "type": "Point", "coordinates": [ -77.04288619051853, 38.927018627216349 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 31.83 }, "geometry": { "type": "Point", "coordinates": [ -77.082706084807398, 38.9217362118859 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.73 }, "geometry": { "type": "Point", "coordinates": [ -77.036958304426662, 38.926726640433451 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 6.73 }, "geometry": { "type": "Point", "coordinates": [ -77.087906205363296, 38.926255937621328 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 23.97 }, "geometry": { "type": "Point", "coordinates": [ -77.06263212351908, 38.922708191939016 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 7.72 }, "geometry": { "type": "Point", "coordinates": [ -77.092202818232124, 38.926128464709656 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 4.39 }, "geometry": { "type": "Point", "coordinates": [ -77.071222444313136, 38.916816759158849 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 5.51 }, "geometry": { "type": "Point", "coordinates": [ -77.086687819776117, 38.916663389964064 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.64 }, "geometry": { "type": "Point", "coordinates": [ -77.097968791723474, 38.915330204513552 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.27 }, "geometry": { "type": "Point", "coordinates": [ -77.046392116937056, 38.916675110932026 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.30}, "geometry": { "type": "Point", "coordinates": [ -77.025768949605492, 38.916729949793194 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -77.036697230141712, 38.91655256704135 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 15.26 }, "geometry": { "type": "Point", "coordinates": [ -77.060411123406951, 38.914165496523623 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -77.021005068020372, 38.915716161460857 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.35 }, "geometry": { "type": "Point", "coordinates": [ -77.025769040690719, 38.915089898021144 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.31 }, "geometry": { "type": "Point", "coordinates": [ -77.026189993195317, 38.915042888672993 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.93}, "geometry": { "type": "Point", "coordinates": [ -76.943493538287015, 38.915007137044974 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.13}, "geometry": { "type": "Point", "coordinates": [ -77.026804522553334, 38.914608406468638 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.63 }, "geometry": { "type": "Point", "coordinates": [ -76.943211764636587, 38.914578770527577 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.07}, "geometry": { "type": "Point", "coordinates": [ -76.989605300140596, 38.913775226583212 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.19}, "geometry": { "type": "Point", "coordinates": [ -77.052803238022804, 38.913930710689222 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.10}, "geometry": { "type": "Point", "coordinates": [ -77.05684452993259, 38.905086261079113 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.74 }, "geometry": { "type": "Point", "coordinates": [ -77.068239879428631, 38.90474082110444 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.19 }, "geometry": { "type": "Point", "coordinates": [ -77.069906972088987, 38.904792323800031 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.95 }, "geometry": { "type": "Point", "coordinates": [ -77.069375411889055, 38.904586009815191 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.49 }, "geometry": { "type": "Point", "coordinates": [ -77.059506821031405, 38.90440567522937 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 4.25 }, "geometry": { "type": "Point", "coordinates": [ -77.065465616884751, 38.904227054672972 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.58 }, "geometry": { "type": "Point", "coordinates": [ -77.061962019771286, 38.904238847676154 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.25 }, "geometry": { "type": "Point", "coordinates": [ -77.060657500508427, 38.904198882588361 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.32 }, "geometry": { "type": "Point", "coordinates": [ -77.059713483112006, 38.904112628127805 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.56 }, "geometry": { "type": "Point", "coordinates": [ -77.027653472880161, 38.903930748478793 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.40 }, "geometry": { "type": "Point", "coordinates": [ -77.05864760959382, 38.904030162952282 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.61 }, "geometry": { "type": "Point", "coordinates": [ -77.026415487302373, 38.903967223561416 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.21}, "geometry": { "type": "Point", "coordinates": [ -77.01927758824155, 38.904003043463966 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.23}, "geometry": { "type": "Point", "coordinates": [ -77.057769573860881, 38.903978541035123 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.27 }, "geometry": { "type": "Point", "coordinates": [ -77.054409408742558, 38.903854830094012 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -77.018554074405017, 38.903827142775789 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 9.12 }, "geometry": { "type": "Point", "coordinates": [ -77.064437188083062, 38.902649093965401 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.10 }, "geometry": { "type": "Point", "coordinates": [ -76.993076109137434, 38.903814745792545 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.26 }, "geometry": { "type": "Point", "coordinates": [ -77.052550319363689, 38.903599928231884 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.38 }, "geometry": { "type": "Point", "coordinates": [ -76.964445504133963, 38.902517193441881 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.23}, "geometry": { "type": "Point", "coordinates": [ -77.050095378774202, 38.902529096980565 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.20 }, "geometry": { "type": "Point", "coordinates": [ -77.021626503036046, 38.902725901228138 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17}, "geometry": { "type": "Point", "coordinates": [ -77.024234232113074, 38.902728078153672 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.15}, "geometry": { "type": "Point", "coordinates": [ -77.02293726664621, 38.902536109469978 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16}, "geometry": { "type": "Point", "coordinates": [ -77.02423558628341, 38.902323208980846 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.77 }, "geometry": { "type": "Point", "coordinates": [ -77.038959067966999, 38.901924441383436 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.19 }, "geometry": { "type": "Point", "coordinates": [ -77.021636670611201, 38.902289818961265 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 5.14 }, "geometry": { "type": "Point", "coordinates": [ -77.030781012863571, 38.901922312708642 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.81 }, "geometry": { "type": "Point", "coordinates": [ -77.034110067258041, 38.901920506701565 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.13 }, "geometry": { "type": "Point", "coordinates": [ -76.999212489582433, 38.901428558415127 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.51 }, "geometry": { "type": "Point", "coordinates": [ -77.019454774429107, 38.901075961473893 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.61 }, "geometry": { "type": "Point", "coordinates": [ -77.045381532893927, 38.901135587903489 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.51}, "geometry": { "type": "Point", "coordinates": [ -77.027660321662523, 38.901132882910737 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.30 }, "geometry": { "type": "Point", "coordinates": [ -77.058041126475217, 38.900388162580775 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.65}, "geometry": { "type": "Point", "coordinates": [ -77.04618792636056, 38.900884962317519 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.86 }, "geometry": { "type": "Point", "coordinates": [ -76.943535606850773, 38.900150063225361 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.31 }, "geometry": { "type": "Point", "coordinates": [ -76.942747395056955, 38.900116689281099 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -77.030233185587505, 38.900221844554459 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 110.17 }, "geometry": { "type": "Point", "coordinates": [ -77.062210044627051, 38.895724806988497 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.22 }, "geometry": { "type": "Point", "coordinates": [ -77.030775472478211, 38.900020717947264 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 8.14 }, "geometry": { "type": "Point", "coordinates": [ -77.036557615739127, 38.899502768453864 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.55 }, "geometry": { "type": "Point", "coordinates": [ -77.04213760973812, 38.899997645349359 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.70 }, "geometry": { "type": "Point", "coordinates": [ -77.042942940729887, 38.899772338208749 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.95 }, "geometry": { "type": "Point", "coordinates": [ -76.942998797844069, 38.899398869370067 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.23 }, "geometry": { "type": "Point", "coordinates": [ -77.011981289909627, 38.89891024662321 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -77.053445042074998, 38.899141635223799 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.22 }, "geometry": { "type": "Point", "coordinates": [ -76.985790262310104, 38.898988704609962 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.74 }, "geometry": { "type": "Point", "coordinates": [ -76.9429175239259, 38.898716216176489 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.39 }, "geometry": { "type": "Point", "coordinates": [ -77.053541436925784, 38.898716265009604 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.10 }, "geometry": { "type": "Point", "coordinates": [ -76.987022105889125, 38.898848045478204 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.12 }, "geometry": { "type": "Point", "coordinates": [ -76.987359583478948, 38.89873456371847 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.19 }, "geometry": { "type": "Point", "coordinates": [ -77.01198526038435, 38.898478605336493 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 38.97}, "geometry": { "type": "Point", "coordinates": [ -76.944784480559932, 38.895386116905961 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.12}, "geometry": { "type": "Point", "coordinates": [ -77.05162172853781, 38.898184562439603 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 12.1}, "geometry": { "type": "Point", "coordinates": [ -77.035742847541954, 38.921029738633457 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.77 }, "geometry": { "type": "Point", "coordinates": [ -77.058079628610201, 38.920761687372412 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.23 }, "geometry": { "type": "Point", "coordinates": [ -77.025794284045105, 38.920126393294169 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.10 }, "geometry": { "type": "Point", "coordinates": [ -77.099552276293181, 38.91826162739077 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.31 }, "geometry": { "type": "Point", "coordinates": [ -77.047976167764645, 38.918923713348576 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 32.64 }, "geometry": { "type": "Point", "coordinates": [ -77.077640933336795, 38.917943965021614 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 4.03 }, "geometry": { "type": "Point", "coordinates": [ -77.066772484011651, 38.918005159741952 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.29 }, "geometry": { "type": "Point", "coordinates": [ -77.048571841754637, 38.918599828771882 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 25.81 }, "geometry": { "type": "Point", "coordinates": [ -77.064034106116353, 38.916890854019734 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.37}, "geometry": { "type": "Point", "coordinates": [ -77.038863631628459, 38.918257548935181 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 24.37 }, "geometry": { "type": "Point", "coordinates": [ -77.088323769804788, 38.908244231769615 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.11 }, "geometry": { "type": "Point", "coordinates": [ -77.036316193286581, 38.917463657939614 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.809 }, "geometry": { "type": "Point", "coordinates": [ -77.069116800931155, 38.916972525577791 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 17.44 }, "geometry": { "type": "Point", "coordinates": [ -77.082767510607098, 38.915199551025857 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 18.19 }, "geometry": { "type": "Point", "coordinates": [ -77.081076277439465, 38.915064571603082 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 5.18 }, "geometry": { "type": "Point", "coordinates": [ -76.947436223524221, 38.913286633179005 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -77.027300975041001, 38.91350272496458 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -77.027273601621147, 38.913187960635462 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.41}, "geometry": { "type": "Point", "coordinates": [ -77.045062379455032, 38.91304724196322 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -77.013958516607858, 38.912728214535981 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 31.23 }, "geometry": { "type": "Point", "coordinates": [ -77.0793059890796, 38.909592818830589 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.77}, "geometry": { "type": "Point", "coordinates": [ -76.947743076454145, 38.912383816988886 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.28 }, "geometry": { "type": "Point", "coordinates": [ -77.012468712203088, 38.912431049282752 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.37 }, "geometry": { "type": "Point", "coordinates": [ -76.949784042193627, 38.912402495573801 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.67 }, "geometry": { "type": "Point", "coordinates": [ -77.050648344543234, 38.912146322788693 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -77.02804751220134, 38.911860150426342 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.80}, "geometry": { "type": "Point", "coordinates": [ -76.947479935932463, 38.91168110405183 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 10.13}, "geometry": { "type": "Point", "coordinates": [ -76.995171135333905, 38.910929940889247 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.09}, "geometry": { "type": "Point", "coordinates": [ -77.008846000903006, 38.912031479191775 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.52}, "geometry": { "type": "Point", "coordinates": [ -76.960805630369165, 38.897398836831542 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.15 }, "geometry": { "type": "Point", "coordinates": [ -77.009485174366446, 38.897460298627159 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16}, "geometry": { "type": "Point", "coordinates": [ -76.989515242485695, 38.89745237485559 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 189.68}, "geometry": { "type": "Point", "coordinates": [ -76.971624992064775, 38.889704594475667 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.35 }, "geometry": { "type": "Point", "coordinates": [ -77.049617856075443, 38.897161348134176 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.38 }, "geometry": { "type": "Point", "coordinates": [ -77.011965226832643, 38.896930191363332 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.32}, "geometry": { "type": "Point", "coordinates": [ -76.991198089477763, 38.897165708015763 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.29 }, "geometry": { "type": "Point", "coordinates": [ -77.017550689305068, 38.896732833231511 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 4.58 }, "geometry": { "type": "Point", "coordinates": [ -77.006576080432737, 38.896432359715284 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 16.23}, "geometry": { "type": "Point", "coordinates": [ -76.960899268122503, 38.893765438447474 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.13 }, "geometry": { "type": "Point", "coordinates": [ -77.0263163038356, 38.896706428773278 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.29 }, "geometry": { "type": "Point", "coordinates": [ -77.025622188499327, 38.896628611230582 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.15 }, "geometry": { "type": "Point", "coordinates": [ -76.992431799174426, 38.896262522529462 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.03 }, "geometry": { "type": "Point", "coordinates": [ -77.032855039881099, 38.895920407649271 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -76.994069205590762, 38.895991562533219 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.21 }, "geometry": { "type": "Point", "coordinates": [ -77.047819064129257, 38.895717271293755 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.91 }, "geometry": { "type": "Point", "coordinates": [ -77.048318037020962, 38.895665857756725 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.23 }, "geometry": { "type": "Point", "coordinates": [ -77.044191844148472, 38.895689700626683 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.61 }, "geometry": { "type": "Point", "coordinates": [ -77.042590809243862, 38.895682291107356 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.83 }, "geometry": { "type": "Point", "coordinates": [ -77.045635990918598, 38.895189912278873 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.65 }, "geometry": { "type": "Point", "coordinates": [ -76.995432243867469, 38.894981994806706 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.80 }, "geometry": { "type": "Point", "coordinates": [ -77.046183555631316, 38.894701982843905 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -77.003246828809907, 38.894936583406889 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -76.997290068636801, 38.894661250944175 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -77.019566003434576, 38.894672826291121 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -77.00172694271366, 38.894661466952677 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.91 }, "geometry": { "type": "Point", "coordinates": [ -77.055391609546547, 38.89378184087974 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.31 }, "geometry": { "type": "Point", "coordinates": [ -77.04546473708578, 38.894126747288595 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.44}, "geometry": { "type": "Point", "coordinates": [ -77.054450561460285, 38.89396900772109 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.90 }, "geometry": { "type": "Point", "coordinates": [ -76.999508619788173, 38.893573665791429 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.35}, "geometry": { "type": "Point", "coordinates": [ -77.053368046510343, 38.893668198834085 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.93 }, "geometry": { "type": "Point", "coordinates": [ -77.053755278517571, 38.892433706815297 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.12}, "geometry": { "type": "Point", "coordinates": [ -77.049505502950268, 38.89243010237125 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17}, "geometry": { "type": "Point", "coordinates": [ -76.944872791601355, 38.892524600075078 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.52 }, "geometry": { "type": "Point", "coordinates": [ -77.019420426281101, 38.89232557879285 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.10 }, "geometry": { "type": "Point", "coordinates": [ -77.041485722651544, 38.892288094874679 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.02 }, "geometry": { "type": "Point", "coordinates": [ -77.016220450963303, 38.892216561499069 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.18}, "geometry": { "type": "Point", "coordinates": [ -76.976429128109544, 38.892203165709667 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -76.945191001322527, 38.892190079474389 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.49 }, "geometry": { "type": "Point", "coordinates": [ -76.941792781321766, 38.89206380514225 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -77.002472282857639, 38.892095468367096 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.40 }, "geometry": { "type": "Point", "coordinates": [ -77.018378869474702, 38.892047949391817 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -76.940842742681141, 38.892001222525501 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 89.44 }, "geometry": { "type": "Point", "coordinates": [ -77.026622033405744, 38.889954385513697 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.34}, "geometry": { "type": "Point", "coordinates": [ -77.015563821423441, 38.891823903468406 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 42.25}, "geometry": { "type": "Point", "coordinates": [ -77.019707120056097, 38.889817808405198 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 18.79 }, "geometry": { "type": "Point", "coordinates": [ -77.016439338472807, 38.88976139953003 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.16 }, "geometry": { "type": "Point", "coordinates": [ -77.004578457674228, 38.891804470505114 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.21 }, "geometry": { "type": "Point", "coordinates": [ -77.004259653005974, 38.891723727854199 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.32}, "geometry": { "type": "Point", "coordinates": [ -76.945770247984001, 38.891691886523127 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.25 }, "geometry": { "type": "Point", "coordinates": [ -76.946165755215148, 38.891225229420066 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 13.19 }, "geometry": { "type": "Point", "coordinates": [ -77.013942368889914, 38.889793824938621 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 10.04 }, "geometry": { "type": "Point", "coordinates": [ -76.971922551085513, 38.889782435173842 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 7.71 }, "geometry": { "type": "Point", "coordinates": [ -76.989915989447184, 38.889793147187007 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.14 }, "geometry": { "type": "Point", "coordinates": [ -76.97531677420713, 38.889793375052058 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 34.42 }, "geometry": { "type": "Point", "coordinates": [ -76.943380990287778, 38.88829626658633 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 37.60 }, "geometry": { "type": "Point", "coordinates": [ -76.965252380961275, 38.88447524808862 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 4.82 }, "geometry": { "type": "Point", "coordinates": [ -76.945916524283035, 38.887886879674106 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 7.66 }, "geometry": { "type": "Point", "coordinates": [ -76.975395205310789, 38.888561014288157 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.54 }, "geometry": { "type": "Point", "coordinates": [ -77.015671991674381, 38.887814406011437 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -77.002992029499765, 38.88745419513964 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.19}, "geometry": { "type": "Point", "coordinates": [ -76.988823096972055, 38.881384036534484 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 64.89}, "geometry": { "type": "Point", "coordinates": [ -76.969505798586781, 38.878560981262133 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.15 }, "geometry": { "type": "Point", "coordinates": [ -76.987992402667174, 38.881349161323989 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.59 }, "geometry": { "type": "Point", "coordinates": [ -76.986872413458599, 38.880883942886832 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.12 }, "geometry": { "type": "Point", "coordinates": [ -76.986889201145644, 38.881149555575519 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -76.985156479809405, 38.880453220501657 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.25 }, "geometry": { "type": "Point", "coordinates": [ -76.98551193893762, 38.88032794628549 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.14 }, "geometry": { "type": "Point", "coordinates": [ -76.985892146307918, 38.880186708715662 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.40 }, "geometry": { "type": "Point", "coordinates": [ -76.984371595857908, 38.879863645470969 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.31 }, "geometry": { "type": "Point", "coordinates": [ -77.035941457754305, 38.879587958236776 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -77.000328961398154, 38.879457748322466 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.61 }, "geometry": { "type": "Point", "coordinates": [ -76.982642071819654, 38.879159304773644 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.37 }, "geometry": { "type": "Point", "coordinates": [ -77.038429841554787, 38.879119525671086 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.15 }, "geometry": { "type": "Point", "coordinates": [ -76.999877052936554, 38.879282826161429 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.74 }, "geometry": { "type": "Point", "coordinates": [ -77.017587433424154, 38.878874610522587 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.84 }, "geometry": { "type": "Point", "coordinates": [ -77.015718543924024, 38.878999507892864 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.43}, "geometry": { "type": "Point", "coordinates": [ -77.019368189432043, 38.878838707395929 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.02}, "geometry": { "type": "Point", "coordinates": [ -77.037742233067107, 38.878540355402222 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 4.97 }, "geometry": { "type": "Point", "coordinates": [ -77.036401995949348, 38.878036470248837 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.53}, "geometry": { "type": "Point", "coordinates": [ -76.99689816656705, 38.878568136502615 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.39 }, "geometry": { "type": "Point", "coordinates": [ -76.994241554259702, 38.876678883437663 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.52}, "geometry": { "type": "Point", "coordinates": [ -76.989061052054723, 38.876593666025201 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.01 }, "geometry": { "type": "Point", "coordinates": [ -76.985304436323929, 38.876286035632724 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.65 }, "geometry": { "type": "Point", "coordinates": [ -76.98834443704078, 38.876232791532587 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 40.63 }, "geometry": { "type": "Point", "coordinates": [ -76.982710788490394, 38.87293300477922 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.87}, "geometry": { "type": "Point", "coordinates": [ -77.01957691422804, 38.873187992841203 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.18}, "geometry": { "type": "Point", "coordinates": [ -76.986571980143069, 38.875527647300117 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.32 }, "geometry": { "type": "Point", "coordinates": [ -76.972169312504036, 38.874176535597414 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.34 }, "geometry": { "type": "Point", "coordinates": [ -76.970797509785683, 38.874126984562778 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.58 }, "geometry": { "type": "Point", "coordinates": [ -76.970567198535988, 38.873817713743598 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.40}, "geometry": { "type": "Point", "coordinates": [ -76.971362504920904, 38.87331598421428 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.60 }, "geometry": { "type": "Point", "coordinates": [ -76.99073024955733, 38.87283692876823 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.67 }, "geometry": { "type": "Point", "coordinates": [ -76.968229004206108, 38.87271216899029 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 27.36 }, "geometry": { "type": "Point", "coordinates": [ -76.949582856318528, 38.869650968239064 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 94.13 }, "geometry": { "type": "Point", "coordinates": [ -76.995691064556638, 38.86721804773471 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.22 }, "geometry": { "type": "Point", "coordinates": [ -77.009209864670552, 38.869142577032392 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 35.18 }, "geometry": { "type": "Point", "coordinates": [ -76.963739071177244, 38.866687629256326 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 31.29 }, "geometry": { "type": "Point", "coordinates": [ -76.956150582942016, 38.866242137907776 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.68 }, "geometry": { "type": "Point", "coordinates": [ -76.952823767390854, 38.867007883939472 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 10.45 }, "geometry": { "type": "Point", "coordinates": [ -76.951323577007514, 38.866882582772718 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 8.41 }, "geometry": { "type": "Point", "coordinates": [ -76.968975023902118, 38.866849478923506 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 19.84 }, "geometry": { "type": "Point", "coordinates": [ -76.971893334395645, 38.86535522240807 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.36 }, "geometry": { "type": "Point", "coordinates": [ -77.010476193099151, 38.86693984380198 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.34 }, "geometry": { "type": "Point", "coordinates": [ -76.951907767451644, 38.865580978193826 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 12.42 }, "geometry": { "type": "Point", "coordinates": [ -77.014076829835602, 38.863604977605128 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 8.94 }, "geometry": { "type": "Point", "coordinates": [ -76.985067422453071, 38.862947301414387 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 22.57 }, "geometry": { "type": "Point", "coordinates": [ -76.976121084509629, 38.862472610546888 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 54.29}, "geometry": { "type": "Point", "coordinates": [ -76.97912246803979, 38.859877251086914 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 4.61 }, "geometry": { "type": "Point", "coordinates": [ -76.974385907853986, 38.859321896233965 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 9.88 }, "geometry": { "type": "Point", "coordinates": [ -76.975453175691825, 38.857781598522912 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 15.82 }, "geometry": { "type": "Point", "coordinates": [ -76.97654799566628, 38.855497792971896 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 13.30 }, "geometry": { "type": "Point", "coordinates": [ -76.97873488914297, 38.852841684082264 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 45.39}, "geometry": { "type": "Point", "coordinates": [ -77.004796597675934, 38.84905060074329 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.10}, "geometry": { "type": "Point", "coordinates": [ -76.983608036584982, 38.85099343592502 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 3.64}, "geometry": { "type": "Point", "coordinates": [ -76.988013588580742, 38.845494294042808 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 40.60 }, "geometry": { "type": "Point", "coordinates": [ -77.006275465944867, 38.841706922293078 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.98 }, "geometry": { "type": "Point", "coordinates": [ -76.999912402579398, 38.844853236275632 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 96.04 }, "geometry": { "type": "Point", "coordinates": [ -76.982397922564019, 38.839641833475852 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 35.60 }, "geometry": { "type": "Point", "coordinates": [ -77.011768412811264, 38.833382727305711 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -77.01740986023168, 38.828691786147239 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 29.87 }, "geometry": { "type": "Point", "coordinates": [ -77.014551998266498, 38.824800090686587 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.64}, "geometry": { "type": "Point", "coordinates": [ -77.017518739572992, 38.826288665554827 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.26 }, "geometry": { "type": "Point", "coordinates": [ -77.017529073533794, 38.823894688391619 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 24.85 }, "geometry": { "type": "Point", "coordinates": [ -77.008078044779836, 38.818203978863068 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.36 }, "geometry": { "type": "Point", "coordinates": [ -76.989351926339495, 38.874163067536443 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -76.930551721016215, 38.8896042194649 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.19 }, "geometry": { "type": "Point", "coordinates": [ -77.011556077810141, 38.864215142385788 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.19 }, "geometry": { "type": "Point", "coordinates": [ -77.010697971592649, 38.864863826823424 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.01 }, "geometry": { "type": "Point", "coordinates": [ -77.01039990193911, 38.865639976293572 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 18.14 }, "geometry": { "type": "Point", "coordinates": [ -77.004733167414102, 38.952472197943294 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 2.82 }, "geometry": { "type": "Point", "coordinates": [ -77.005455110166707, 38.954722956226547 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 54.39 }, "geometry": { "type": "Point", "coordinates": [ -76.949802714767841, 38.915635305670676 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 86.64 }, "geometry": { "type": "Point", "coordinates": [ -77.036557703786926, 38.895405241148723 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 108.29 }, "geometry": { "type": "Point", "coordinates": [ -77.035604716271095, 38.888806118047938 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 241.73 }, "geometry": { "type": "Point", "coordinates": [ -77.046021009365788, 38.888089176090155 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.40 }, "geometry": { "type": "Point", "coordinates": [ -77.026454574957029, 38.901066540145948 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.19 }, "geometry": { "type": "Point", "coordinates": [ -77.015926351857644, 38.908183987559802 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.29 }, "geometry": { "type": "Point", "coordinates": [ -77.015311994970091, 38.907548383806613 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.15 }, "geometry": { "type": "Point", "coordinates": [ -77.012321038859952, 38.888980949739725 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.15 }, "geometry": { "type": "Point", "coordinates": [ -77.012324018651938, 38.890638694416829 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.24 }, "geometry": { "type": "Point", "coordinates": [ -77.080470229583327, 38.95876407949855 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.10 }, "geometry": { "type": "Point", "coordinates": [ -77.076344050042692, 38.967701613579187 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 173.96 }, "geometry": { "type": "Point", "coordinates": [ -77.054030746089836, 38.914530273399748 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.21 }, "geometry": { "type": "Point", "coordinates": [ -77.056433798446037, 38.92005063508028 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 138.38 }, "geometry": { "type": "Point", "coordinates": [ -77.056504021758741, 38.882799994457905 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 4.35 }, "geometry": { "type": "Point", "coordinates": [ -77.05427252863646, 38.934324085986205 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.63 }, "geometry": { "type": "Point", "coordinates": [ -77.019206096094877, 38.978569923955803 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.23 }, "geometry": { "type": "Point", "coordinates": [ -77.018769344000063, 38.977956135580506 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.18 }, "geometry": { "type": "Point", "coordinates": [ -77.069997466091621, 38.944569207656052 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 12.66 }, "geometry": { "type": "Point", "coordinates": [ -76.985527665677026, 38.875502249805258 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 7.12 }, "geometry": { "type": "Point", "coordinates": [ -76.976653940997352, 38.878495120405518 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.32 }, "geometry": { "type": "Point", "coordinates": [ -76.995366327104847, 38.883872610940266 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.86 }, "geometry": { "type": "Point", "coordinates": [ -76.995768174794918, 38.884087203840373 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 0.50 }, "geometry": { "type": "Point", "coordinates": [ -76.994069458948417, 38.8841806397322 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 4.89 }, "geometry": { "type": "Point", "coordinates": [ -77.023480747326957, 38.804490599450261 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 1.45 }, "geometry": { "type": "Point", "coordinates": [ -77.021707835380042, 38.805569959134246 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 42.24 }, "geometry": { "type": "Point", "coordinates": [ -77.018794702100109, 38.811061393963655 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 9.47 }, "geometry": { "type": "Point", "coordinates": [ -77.005172652308872, 38.82037089145026 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 12.90 }, "geometry": { "type": "Point", "coordinates": [ -77.008770676230498, 38.816125708596978 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 6.63 }, "geometry": { "type": "Point", "coordinates": [ -76.941427571770603, 38.917200488596691 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 288.63 }, "geometry": { "type": "Point", "coordinates": [ -76.950065777532828, 38.908713650030457 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 22.15 }, "geometry": { "type": "Point", "coordinates": [ -76.944647228138265, 38.919029355095319 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 16.48 }, "geometry": { "type": "Point", "coordinates": [ -76.984375400379903, 38.950867341434481 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "No Name", "Area_Acres": 19.99 }, "geometry": { "type": "Point", "coordinates": [ -77.043715108730339, 38.990983253452661 ] } },
+{ "type": "Feature", "properties": { "NAME": "Rock Creek", "ADDRESS": "No Name", "Area_Acres": 1774.14 }, "geometry": { "type": "Point", "coordinates": [ -77.046106833062439, 38.962751867303453 ] } },
+{ "type": "Feature", "properties": { "NAME": "Fort Stanton", "ADDRESS": "north of Erie St., between Pearson Pl. and 16th St., SE", "Area_Acres": 2.55 }, "geometry": { "type": "Point", "coordinates": [ -76.978993816102204, 38.859525241362988 ] } },
+{ "type": "Feature", "properties": { "NAME": "Keene Park", "ADDRESS": "Ft. Totten Park to Barnard Hill, east of Blair Rd. and Gallati", "Area_Acres": 0.48 }, "geometry": { "type": "Point", "coordinates": [ -77.006313221250977, 38.953706121641794 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Texas Ave. and C St., SE", "Area_Acres": 0.28369064254600002 }, "geometry": { "type": "Point", "coordinates": [ -76.941328509814937, 38.887460329941426 ] } },
+{ "type": "Feature", "properties": { "NAME": "Rose Park", "ADDRESS": "Along Rock Creek , between National Zoological Park and Theo Roosevelt Bridge.", "Area_Acres": 1.06 }, "geometry": { "type": "Point", "coordinates": [ -77.054890019731928, 38.907925873099721 ] } },
+{ "type": "Feature", "properties": { "NAME": "NJ and O Sts Park", "ADDRESS": "1301 New Jersey Avenue, NW", "Area_Acres": 0.40 }, "geometry": { "type": "Point", "coordinates": [ -77.016095377780559, 38.908112052306997 ] } },
+{ "type": "Feature", "properties": { "NAME": "Fort Reno", "ADDRESS": "Chesapeake St. and Belt Rd., NW", "Area_Acres": 6.88 }, "geometry": { "type": "Point", "coordinates": [ -77.079094279152486, 38.951663649776471 ] } },
+{ "type": "Feature", "properties": { "NAME": "Fort Reno", "ADDRESS": "Chesapeake St. and Belt Rd., NW", "Area_Acres": 2.43 }, "geometry": { "type": "Point", "coordinates": [ -77.077617013668529, 38.951320651265192 ] } },
+{ "type": "Feature", "properties": { "NAME": "Fort Reno", "ADDRESS": "Chesapeake St. and Belt Rd., NW", "Area_Acres": 1.23 }, "geometry": { "type": "Point", "coordinates": [ -77.077214354268094, 38.951011957055904 ] } },
+{ "type": "Feature", "properties": { "NAME": "Kenilworth-Parkside", "ADDRESS": "Anacostia Ave. and Polk St., NE", "Area_Acres": 30.23 }, "geometry": { "type": "Point", "coordinates": [ -76.944968251899169, 38.908051767978932 ] } },
+{ "type": "Feature", "properties": { "NAME": "Anacostia Fitness Center", "ADDRESS": "1800 Anacostia Dr., SE", "Area_Acres": 14.01 }, "geometry": { "type": "Point", "coordinates": [ -76.982105990884008, 38.873156077570208 ] } },
+{ "type": "Feature", "properties": { "NAME": "Francis", "ADDRESS": "25th and N Sts., NW", "Area_Acres": 9.56 }, "geometry": { "type": "Point", "coordinates": [ -77.051844192801923, 38.907802314521788 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "700 Blk Missouri Ave, 5700 Blk 7th,  and 700 Blk Madison Streets, NW", "Area_Acres": 0.76 }, "geometry": { "type": "Point", "coordinates": [ -77.021933298389428, 38.958741654828529 ] } },
+{ "type": "Feature", "properties": { "NAME": "No Name", "ADDRESS": "Nevada Ave, Chapel and Broadbranch Roads, NW", "Area_Acres": 0.17 }, "geometry": { "type": "Point", "coordinates": [ -77.065510129812012, 38.958692624380646 ] } },
+{ "type": "Feature", "properties": { "NAME": "Oxon Run Park", "ADDRESS": "Mississippi Ave., between 1st St. and Southern Ave., SE", "Area_Acres": 2.78 }, "geometry": { "type": "Point", "coordinates": [ -76.978662758593273, 38.841802673286324 ] } },
+{ "type": "Feature", "properties": { "NAME": "Oxon Run Park", "ADDRESS": "Mississippi Ave., between 1st St. and Southern Ave., SE", "Area_Acres": 3.04 }, "geometry": { "type": "Point", "coordinates": [ -77.004821346674561, 38.819647643757754 ] } },
+{ "type": "Feature", "properties": { "NAME": "Parkside Recreation Center", "ADDRESS": "Anacostia Ave. and Hayes St., SE", "Area_Acres": 3.72 }, "geometry": { "type": "Point", "coordinates": [ -76.951385090917086, 38.902144409533058 ] } },
+{ "type": "Feature", "properties": { "NAME": "Virginia Avenue", "ADDRESS": "E St., 21st St., and Virginia Ave., NW", "Area_Acres": 0.56 }, "geometry": { "type": "Point", "coordinates": [ -77.047075275880132, 38.89581448818749 ] } },
+{ "type": "Feature", "properties": { "NAME": "Bannaker Circle", "ADDRESS": "10th St. at Bannaker Circle, SW", "Area_Acres": 0.42 }, "geometry": { "type": "Point", "coordinates": [ -77.025983780853238, 38.881709318213446 ] } }
+]}
+
+          
+          ];
+  var map = L.mapbox.map('map', 'mapbox.streets')
+  .setView([38.909671288923, -77.034084142948], 13);
+  map.legendControl
+    .addLegend('Instructions:  Search for your address to place a marker.  Drag the blue marker over to your location.  Click locations within the circle to find out what parks are within a half a mile of you.')
+    .setPosition('topright');
+
+
+  
+  var MyControl = L.Control.extend({
+    options: {
+      position: 'bottomleft'
+    },
+
+    onAdd: function (map) {
+      // create the control container with a particular class name
+      // ** you can add the image to the div as a background image using css
+      var container = L.DomUtil.create('div', 'my-custom-control');
+
+      // ... initialize other DOM elements, add listeners, etc.
+      return container;
+    }
+});
+
+map.addControl(new MyControl());
+
+
+  var geocoderControl = L.mapbox.geocoderControl('mapbox.places', {keepOpen: true});
+  geocoderControl.addTo(map);
+  geocoderControl.on('select', function(object){
+  
+  	var coord = object.feature.geometry.coordinates;
+  
+  	var coordd = L.marker([coord[1], coord[0]], {draggable:true})
+
+  	coordd.bindPopup('This marker is draggable! Move it around to see what parks are in your "area of walkability".');
+    coordd.addTo(map);
+
+  	});
+
+
+
+
+  var marker = L.marker(new L.LatLng(38.909671288923, -77.034084142948), {
+            icon: L.mapbox.marker.icon({
+                'marker-color': '1B05E3', 
+                'marker-size': 'large',
+                "marker-symbol": "pitch"}),
+            draggable: true
+        });
+
+        //add marker popup
+        marker.bindPopup('This marker is draggable! Move it around to see what parks are in your "area of walkability".');
+        marker.addTo(map);
+
+        //remove old buffers (used when marker is dragged)
+        function removeBuff(){
+            map.removeLayer(buff);
+            };
+
+        //create buffer (used when the marker is dragged)
+        function updateBuffer(){
+            //Make the marker a feature
+            var pointMarker = marker.toGeoJSON();
+            //buffer the marker geoJSON feature
+            var buffered = turf.buffer(pointMarker, .5, 'miles');
+            //add buffer to the map. Note: no "var" before "buff" makes it a global variable and usable within the removeBuff() function. 
+            buff = L.mapbox.featureLayer(buffered);
+            buff.addTo(map);
+        };
+
+        marker.on('drag', function(){removeBuff(), updateBuffer()});
+        updateBuffer();
+
+  var locations = L.mapbox.featureLayer().addTo(map);
+
+  locations.setGeoJSON(geojson);
+
+  function setActive(el) {
+    var siblings = listings.getElementsByTagName('div');
+    for (var i = 0; i < siblings.length; i++) {
+      siblings[i].className = siblings[i].className
+      .replace(/active/, '').replace(/\s\s*$/, '');
+    }
+
+    el.className += ' active';
+  }
+
+
+  locations.eachLayer(function(locale) {
+
+    // Shorten locale.feature.properties to just `prop` so we're not
+    // writing this long form over and over again.
+    var prop = locale.feature.properties;
+
+    // Each marker on the map.
+    var popup = '<h3>Park</h3><div>' + prop.NAME + '<dt>' + 'Acres =' + prop.Area_Acres + '<dt>';
+
+
+    var listing = listings.appendChild(document.createElement('div'));
+    listing.className = 'item';
+
+    var link = listing.appendChild(document.createElement('a'));
+    link.href = '#';
+    link.className = 'title';
+
+
+
+
+    link.onclick = function() {
+      setActive(listing);
+
+      // When a menu item is clicked, animate the map to center
+      // its associated locale and open its popup.
+      map.setView(locale.getLatLng(), 16);
+      locale.openPopup();
+      return false;
+    };
+
+    // Marker interaction
+    locale.on('click', function(e) {
+      // 1. center the map on the selected marker.
+      map.panTo(locale.getLatLng());
+
+      // 2. Set active the markers associated listing.
+      setActive(listing);
+    });
+
+    popup += '</div>';
+    locale.bindPopup(popup);
+
+    locale.setIcon(L.icon({
+      iconUrl: 'marker.png',
+      iconSize: [40, 40],
+      iconAnchor: [28, 28],
+      popupAnchor: [0, -34]
+    }));
+
+});
+</script>
+</body>
+</html>
+
